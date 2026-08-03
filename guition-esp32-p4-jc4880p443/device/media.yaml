@@ -21,14 +21,25 @@ globals:
 http_request:
   verify_ssl: false
 
-# Cover art image, repointed at runtime via online_image.set_url
+# Cover art image, repointed at runtime via online_image.set_url.
+# format: AUTO detects PNG vs JPEG per-source instead of guessing (the
+# placeholder favicon below is actually a PNG despite its .png-adjacent name,
+# real Spotify/MA art is JPEG - AUTO handles both without per-source config).
+# on_download_finished is required: a successful online_image download does
+# NOT automatically redraw the LVGL image widget that references it - you
+# have to explicitly re-point the widget's src at the same id to force it
+# to redraw with the freshly-decoded bytes.
 image:
   - platform: online_image
     id: cover_art
     url: "https://www.home-assistant.io/images/favicon-192x192-full.png"
-    format: JPEG
+    format: AUTO
     type: RGB565
     resize: 96x96
+    on_download_finished:
+      - lvgl.image.update:
+          id: cover_art_widget
+          src: cover_art
 
 # One text_sensor/sensor per attribute, per player. Cheap to keep both live;
 # refresh_display() below picks whichever one matches the current selection.
@@ -164,6 +175,7 @@ lvgl:
             layout: {type: flex, flex_flow: row, pad_column: 10}
             width: 100%
             height: 64
+            scrollable: false
             bg_opa: TRANSP
             border_width: 0
             widgets:
@@ -203,6 +215,7 @@ lvgl:
             layout: {type: flex, flex_flow: row, flex_align_main: start, flex_align_cross: center, pad_column: 14}
             width: 100%
             height: 104
+            scrollable: false
             bg_opa: TRANSP
             border_width: 0
             widgets:
@@ -215,6 +228,7 @@ lvgl:
                   layout: {type: flex, flex_flow: column, flex_align_cross: start}
                   flex_grow: 1
                   height: SIZE_CONTENT
+                  scrollable: false
                   bg_opa: TRANSP
                   border_width: 0
                   widgets:
@@ -238,6 +252,7 @@ lvgl:
             layout: {type: flex, flex_flow: row, flex_align_main: center, pad_column: 20}
             width: 100%
             height: 68
+            scrollable: false
             bg_opa: TRANSP
             border_width: 0
             widgets:
@@ -309,6 +324,7 @@ lvgl:
             layout: {type: flex, flex_flow: row_wrap, pad_row: 6, pad_column: 6}
             width: 100%
             height: SIZE_CONTENT
+            scrollable: false
             bg_opa: TRANSP
             border_width: 0
             widgets:
