@@ -79,7 +79,12 @@ touchscreen:
     display: my_display
 
 # Display
+# rotation: 90 turns the native 480x800 portrait panel into an 800x480
+# landscape canvas (software rotation - LVGL/touch coordinates adjust
+# automatically). If the image comes out upside-down for your physical
+# mounting, use 270 instead.
 display:
   - platform: mipi_dsi
     id: my_display
     model: JC4880P443
+    rotation: 90

@@ -1,6 +1,5 @@
 packages:
   device: !include device/device.yaml
-  sensors: !include device/sensors.yaml
   lvgl: !include device/lvgl.yaml
   media: !include device/media.yaml
   time: !include addon/time.yaml
