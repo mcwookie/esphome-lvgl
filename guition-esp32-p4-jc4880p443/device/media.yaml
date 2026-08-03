@@ -176,7 +176,8 @@ lvgl:
         - obj:
             layout: {type: flex, flex_flow: row, flex_align_cross: center, pad_column: 10}
             width: 100%
-            height: 68
+            height: 70
+            pad_all: 0
             scrollable: false
             bg_opa: TRANSP
             border_width: 0
@@ -217,6 +218,7 @@ lvgl:
             layout: {type: flex, flex_flow: row, flex_align_main: start, flex_align_cross: center, pad_column: 14}
             width: 100%
             height: 104
+            pad_all: 0
             scrollable: false
             bg_opa: TRANSP
             border_width: 0
@@ -253,7 +255,8 @@ lvgl:
         - obj:
             layout: {type: flex, flex_flow: row, flex_align_main: center, flex_align_cross: center, pad_column: 20}
             width: 100%
-            height: 74
+            height: 78
+            pad_all: 0
             scrollable: false
             bg_opa: TRANSP
             border_width: 0
