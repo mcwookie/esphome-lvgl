@@ -14,6 +14,13 @@ globals:
     restore_value: false
     initial_value: '"media_player.roku_express_4k_office"'
 
+# Required by online_image below - performs the actual HTTP(S) fetch.
+# verify_ssl: false avoids needing to bundle CA certs for the various https
+# album-art CDNs (Spotify's i.scdn.co, mosaic.scdn.co, etc.) - acceptable for
+# fetching public artwork on a local device.
+http_request:
+  verify_ssl: false
+
 # Cover art image, repointed at runtime via online_image.set_url
 online_image:
   - id: cover_art
