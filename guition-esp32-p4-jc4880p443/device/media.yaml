@@ -1,0 +1,371 @@
+# Music Assistant control page for guition-esp32-p4-jc4880p443
+# Add this file as device/media.yaml in your fork of jtenniswood/esphome-lvgl,
+# then add `media: !include device/media.yaml` to package.yaml (see instructions).
+#
+# EDIT THIS: point at your actual LAN-reachable Home Assistant URL (not 127.0.0.1 -
+# that only resolves inside HA's own container/host, not from another device on your network).
+substitutions:
+  ha_url: "http://192.168.20.50:8123"   # <-- CHANGE ME to your real Home Assistant LAN address
+
+# Which media_player entity is currently being controlled/displayed.
+globals:
+  - id: current_player
+    type: std::string
+    restore_value: false
+    initial_value: '"media_player.roku_express_4k_office"'
+
+# Cover art image, repointed at runtime via online_image.set_url
+online_image:
+  - id: cover_art
+    url: "https://www.home-assistant.io/images/favicon-192x192-full.png"
+    format: JPEG
+    type: RGB565
+    resize: 160x160
+
+# One text_sensor/sensor per attribute, per player. Cheap to keep both live;
+# refresh_display() below picks whichever one matches the current selection.
+text_sensor:
+  - platform: homeassistant
+    id: roku_state
+    entity_id: media_player.roku_express_4k_office
+    on_value:
+      - script.execute: refresh_display
+  - platform: homeassistant
+    id: roku_media_title
+    entity_id: media_player.roku_express_4k_office
+    attribute: media_title
+    on_value:
+      - script.execute: refresh_display
+  - platform: homeassistant
+    id: roku_media_artist
+    entity_id: media_player.roku_express_4k_office
+    attribute: media_artist
+    on_value:
+      - script.execute: refresh_display
+  - platform: homeassistant
+    id: roku_entity_picture
+    entity_id: media_player.roku_express_4k_office
+    attribute: entity_picture
+    on_value:
+      - script.execute: refresh_display
+
+  - platform: homeassistant
+    id: macmini_state
+    entity_id: media_player.brians_mac_mini
+    on_value:
+      - script.execute: refresh_display
+  - platform: homeassistant
+    id: macmini_media_title
+    entity_id: media_player.brians_mac_mini
+    attribute: media_title
+    on_value:
+      - script.execute: refresh_display
+  - platform: homeassistant
+    id: macmini_media_artist
+    entity_id: media_player.brians_mac_mini
+    attribute: media_artist
+    on_value:
+      - script.execute: refresh_display
+  - platform: homeassistant
+    id: macmini_entity_picture
+    entity_id: media_player.brians_mac_mini
+    attribute: entity_picture
+    on_value:
+      - script.execute: refresh_display
+
+sensor:
+  - platform: homeassistant
+    id: roku_volume
+    entity_id: media_player.roku_express_4k_office
+    attribute: volume_level
+    on_value:
+      - script.execute: refresh_display
+  - platform: homeassistant
+    id: macmini_volume
+    entity_id: media_player.brians_mac_mini
+    attribute: volume_level
+    on_value:
+      - script.execute: refresh_display
+
+# Pulls whichever player's cached sensor values match id(current_player) onto
+# the shared widgets. Called on every sensor update AND on player-switch.
+script:
+  - id: refresh_display
+    then:
+      - lvgl.label.update:
+          id: media_title_label
+          text: !lambda |-
+            return (id(current_player) == "media_player.roku_express_4k_office")
+              ? id(roku_media_title).state : id(macmini_media_title).state;
+      - lvgl.label.update:
+          id: media_artist_label
+          text: !lambda |-
+            return (id(current_player) == "media_player.roku_express_4k_office")
+              ? id(roku_media_artist).state : id(macmini_media_artist).state;
+      - lvgl.label.update:
+          id: play_pause_icon
+          text: !lambda |-
+            std::string st = (id(current_player) == "media_player.roku_express_4k_office")
+              ? id(roku_state).state : id(macmini_state).state;
+            return (st == "playing") ? "\U000F03E4" : "\U000F040A";
+      - lvgl.slider.update:
+          id: volume_slider
+          value: !lambda |-
+            float v = (id(current_player) == "media_player.roku_express_4k_office")
+              ? id(roku_volume).state : id(macmini_volume).state;
+            return (int)(v * 100);
+      - online_image.set_url:
+          id: cover_art
+          url: !lambda |-
+            std::string pic = (id(current_player) == "media_player.roku_express_4k_office")
+              ? id(roku_entity_picture).state : id(macmini_entity_picture).state;
+            if (!pic.empty() && pic.rfind("http", 0) != 0) {
+              pic = std::string("${ha_url}") + pic;
+            }
+            return pic;
+
+lvgl:
+  # Persistent icon-only button visible on every page; toggles between
+  # the existing main_page and this new music_page.
+  top_layer:
+    widgets:
+      - button:
+          id: page_nav_button
+          align: top_right
+          x: -4
+          y: 0
+          width: 40
+          height: 32
+          bg_opa: TRANSP
+          shadow_width: 0
+          border_width: 0
+          widgets:
+            - label:
+                text_font: $icon_font
+                text: "\U000F04E1"   # mdi-swap-horizontal
+                text_color: 0xFFFFFF
+          on_click:
+            - lvgl.page.next:
+
+  pages:
+    - id: music_page
+      layout:
+        type: flex
+        flex_flow: column
+        pad_row: 10
+      width: 100%
+      scrollable: false
+      bg_color: Black
+      bg_opa: cover
+      pad_top: 36
+      pad_bottom: 5
+      pad_left: 10
+      pad_right: 10
+
+      widgets:
+        # --- Player selector ---
+        - obj:
+            layout: {type: flex, flex_flow: row, pad_column: 10}
+            width: 100%
+            height: SIZE_CONTENT
+            bg_opa: TRANSP
+            border_width: 0
+            widgets:
+              - button:
+                  id: player_roku_button
+                  checkable: true
+                  height: 56
+                  width: 200
+                  styles: control
+                  widgets:
+                    - label: {text_font: $icon_font, text: "\U000F0502", align: left}   # mdi-television
+                    - label: {text: "Office Roku", align: right}
+                  on_press:
+                    - lambda: 'id(current_player) = "media_player.roku_express_4k_office";'
+                    - lvgl.widget.update: {id: player_roku_button, state: {checked: true}}
+                    - lvgl.widget.update: {id: player_macmini_button, state: {checked: false}}
+                    - script.execute: refresh_display
+              - button:
+                  id: player_macmini_button
+                  checkable: true
+                  height: 56
+                  width: 200
+                  styles: control
+                  widgets:
+                    - label: {text_font: $icon_font, text: "\U000F0322", align: left}   # mdi-laptop
+                    - label: {text: "Mac mini", align: right}
+                  on_press:
+                    - lambda: 'id(current_player) = "media_player.brians_mac_mini";'
+                    - lvgl.widget.update: {id: player_roku_button, state: {checked: false}}
+                    - lvgl.widget.update: {id: player_macmini_button, state: {checked: true}}
+                    - script.execute: refresh_display
+
+        # --- Now playing ---
+        - obj:
+            layout: {type: flex, flex_flow: column, flex_align_main: center, flex_align_cross: center}
+            width: 100%
+            height: SIZE_CONTENT
+            bg_opa: TRANSP
+            border_width: 0
+            widgets:
+              - image:
+                  id: cover_art_widget
+                  src: cover_art
+                  width: 160
+                  height: 160
+              - label:
+                  id: media_title_label
+                  text: "Nothing playing"
+                  text_font: label_font
+                  text_color: 0xFFFFFF
+              - label:
+                  id: media_artist_label
+                  text: ""
+                  text_font: label_font
+                  text_color: 0xAAAAAA
+
+        # --- Transport controls ---
+        - obj:
+            layout: {type: flex, flex_flow: row, flex_align_main: center, pad_column: 20}
+            width: 100%
+            height: SIZE_CONTENT
+            bg_opa: TRANSP
+            border_width: 0
+            widgets:
+              - button:
+                  styles: control
+                  height: 70
+                  width: 70
+                  widgets:
+                    - label: {text_font: $icon_font, text: "\U000F04AE", align: center}   # skip-previous
+                  on_click:
+                    - homeassistant.service:
+                        service: media_player.media_previous_track
+                        data:
+                          entity_id: !lambda 'return id(current_player);'
+              - button:
+                  id: play_pause_button
+                  styles: control
+                  height: 70
+                  width: 70
+                  widgets:
+                    - label: {id: play_pause_icon, text_font: $icon_font, text: "\U000F040A", align: center}
+                  on_click:
+                    - homeassistant.service:
+                        service: media_player.media_play_pause
+                        data:
+                          entity_id: !lambda 'return id(current_player);'
+              - button:
+                  styles: control
+                  height: 70
+                  width: 70
+                  widgets:
+                    - label: {text_font: $icon_font, text: "\U000F04AD", align: center}   # skip-next
+                  on_click:
+                    - homeassistant.service:
+                        service: media_player.media_next_track
+                        data:
+                          entity_id: !lambda 'return id(current_player);'
+
+        # --- Volume ---
+        - slider:
+            id: volume_slider
+            width: 90%
+            height: 24
+            range_from: 0
+            range_to: 100
+            value: 50
+            align: center
+            on_release:
+              - homeassistant.service:
+                  service: media_player.volume_set
+                  data:
+                    entity_id: !lambda 'return id(current_player);'
+                    volume_level: !lambda 'return x / 100.0f;'
+
+        # --- Playlist shortcuts (Music Assistant library IDs) ---
+        - obj:
+            layout: {type: flex, flex_flow: row_wrap, pad_row: 8, pad_column: 8}
+            width: 100%
+            height: SIZE_CONTENT
+            bg_opa: TRANSP
+            border_width: 0
+            widgets:
+              - button:
+                  styles: control
+                  height: 64
+                  width: 140
+                  widgets:
+                    - label: {text: "Megadeth", align: center}
+                  on_click:
+                    - homeassistant.service:
+                        service: media_player.play_media
+                        data:
+                          entity_id: !lambda 'return id(current_player);'
+                          media_content_type: "playlist"
+                          media_content_id: "library://playlist/11"
+              - button:
+                  styles: control
+                  height: 64
+                  width: 140
+                  widgets:
+                    - label: {text: "Avenged Sevenfold", align: center}
+                  on_click:
+                    - homeassistant.service:
+                        service: media_player.play_media
+                        data:
+                          entity_id: !lambda 'return id(current_player);'
+                          media_content_type: "playlist"
+                          media_content_id: "library://playlist/26"
+              - button:
+                  styles: control
+                  height: 64
+                  width: 140
+                  widgets:
+                    - label: {text: "The Killers", align: center}
+                  on_click:
+                    - homeassistant.service:
+                        service: media_player.play_media
+                        data:
+                          entity_id: !lambda 'return id(current_player);'
+                          media_content_type: "playlist"
+                          media_content_id: "library://playlist/28"
+              - button:
+                  styles: control
+                  height: 64
+                  width: 140
+                  widgets:
+                    - label: {text: "Good Stuff", align: center}
+                  on_click:
+                    - homeassistant.service:
+                        service: media_player.play_media
+                        data:
+                          entity_id: !lambda 'return id(current_player);'
+                          media_content_type: "playlist"
+                          media_content_id: "library://playlist/27"
+              - button:
+                  styles: control
+                  height: 64
+                  width: 140
+                  widgets:
+                    - label: {text: "Metallica", align: center}
+                  on_click:
+                    - homeassistant.service:
+                        service: media_player.play_media
+                        data:
+                          entity_id: !lambda 'return id(current_player);'
+                          media_content_type: "playlist"
+                          media_content_id: "library://playlist/23"
+              - button:
+                  styles: control
+                  height: 64
+                  width: 140
+                  widgets:
+                    - label: {text: "Muse", align: center}
+                  on_click:
+                    - homeassistant.service:
+                        service: media_player.play_media
+                        data:
+                          entity_id: !lambda 'return id(current_player);'
+                          media_content_type: "playlist"
+                          media_content_id: "library://playlist/135"
