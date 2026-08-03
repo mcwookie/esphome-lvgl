@@ -144,7 +144,7 @@ lvgl:
       layout:
         type: flex
         flex_flow: column
-        pad_row: 6
+        pad_row: 8
       width: 100%
       scrollable: false
       bg_color: Black
@@ -155,19 +155,24 @@ lvgl:
       pad_right: 10
 
       widgets:
-        # --- Player selector --- (height 40)
+        # --- Player selector --- (height 64)
+        # pad_all overridden to 4 (theme default is 14px) - icon_font glyphs
+        # are 48px tall, and the theme's default padding was eating enough
+        # of the button's height that icons bled past the button into the
+        # section below.
         - obj:
             layout: {type: flex, flex_flow: row, pad_column: 10}
             width: 100%
-            height: 40
+            height: 64
             bg_opa: TRANSP
             border_width: 0
             widgets:
               - button:
                   id: player_roku_button
                   checkable: true
-                  height: 36
+                  height: 56
                   width: 170
+                  pad_all: 4
                   styles: control
                   widgets:
                     - label: {text_font: $icon_font, text: "\U000F0502", align: LEFT_MID}   # mdi-television
@@ -180,8 +185,9 @@ lvgl:
               - button:
                   id: player_macmini_button
                   checkable: true
-                  height: 36
+                  height: 56
                   width: 170
+                  pad_all: 4
                   styles: control
                   widgets:
                     - label: {text_font: $icon_font, text: "\U000F0322", align: LEFT_MID}   # mdi-laptop
@@ -192,11 +198,11 @@ lvgl:
                     - lvgl.widget.update: {id: player_macmini_button, state: {checked: true}}
                     - script.execute: refresh_display
 
-        # --- Now playing --- (row: art beside text, height 96)
+        # --- Now playing --- (row: art beside text, height 104)
         - obj:
             layout: {type: flex, flex_flow: row, flex_align_main: start, flex_align_cross: center, pad_column: 14}
             width: 100%
-            height: 96
+            height: 104
             bg_opa: TRANSP
             border_width: 0
             widgets:
@@ -223,7 +229,7 @@ lvgl:
                         text_font: label_font
                         text_color: 0xAAAAAA
 
-        # --- Transport controls --- (height 56)
+        # --- Transport controls --- (height 68)
         # NOTE: homeassistant.action's `data:` fields must be STATIC. Runtime
         # (lambda-derived) values have to go through `variables:` + a Jinja
         # `data_template:` string that Home Assistant renders on receipt -
@@ -231,14 +237,15 @@ lvgl:
         - obj:
             layout: {type: flex, flex_flow: row, flex_align_main: center, pad_column: 20}
             width: 100%
-            height: 56
+            height: 68
             bg_opa: TRANSP
             border_width: 0
             widgets:
               - button:
                   styles: control
-                  height: 56
-                  width: 56
+                  height: 60
+                  width: 60
+                  pad_all: 4
                   widgets:
                     - label: {text_font: $icon_font, text: "\U000F04AE", align: center}   # skip-previous
                   on_click:
@@ -251,8 +258,9 @@ lvgl:
               - button:
                   id: play_pause_button
                   styles: control
-                  height: 56
-                  width: 56
+                  height: 60
+                  width: 60
+                  pad_all: 4
                   widgets:
                     - label: {id: play_pause_icon, text_font: $icon_font, text: "\U000F040A", align: center}
                   on_click:
@@ -264,8 +272,9 @@ lvgl:
                           entity_id: "{{ target_player }}"
               - button:
                   styles: control
-                  height: 56
-                  width: 56
+                  height: 60
+                  width: 60
+                  pad_all: 4
                   widgets:
                     - label: {text_font: $icon_font, text: "\U000F04AD", align: center}   # skip-next
                   on_click:
@@ -305,10 +314,11 @@ lvgl:
             widgets:
               - button:
                   styles: control
-                  height: 48
-                  width: 128
+                  height: 66
+                  width: 136
+                  pad_all: 6
                   widgets:
-                    - label: {text: "Megadeth", align: center}
+                    - label: {text: "Megadeth", width: 100%, long_mode: DOT, text_align: center}
                   on_click:
                     - homeassistant.action:
                         action: media_player.play_media
@@ -320,10 +330,11 @@ lvgl:
                           media_content_id: "library://playlist/11"
               - button:
                   styles: control
-                  height: 48
-                  width: 128
+                  height: 66
+                  width: 136
+                  pad_all: 6
                   widgets:
-                    - label: {text: "Avenged Sevenfold", align: center}
+                    - label: {text: "Avenged Sevenfold", width: 100%, long_mode: DOT, text_align: center}
                   on_click:
                     - homeassistant.action:
                         action: media_player.play_media
@@ -335,10 +346,11 @@ lvgl:
                           media_content_id: "library://playlist/26"
               - button:
                   styles: control
-                  height: 48
-                  width: 128
+                  height: 66
+                  width: 136
+                  pad_all: 6
                   widgets:
-                    - label: {text: "The Killers", align: center}
+                    - label: {text: "The Killers", width: 100%, long_mode: DOT, text_align: center}
                   on_click:
                     - homeassistant.action:
                         action: media_player.play_media
@@ -350,10 +362,11 @@ lvgl:
                           media_content_id: "library://playlist/28"
               - button:
                   styles: control
-                  height: 48
-                  width: 128
+                  height: 66
+                  width: 136
+                  pad_all: 6
                   widgets:
-                    - label: {text: "Good Stuff", align: center}
+                    - label: {text: "Good Stuff", width: 100%, long_mode: DOT, text_align: center}
                   on_click:
                     - homeassistant.action:
                         action: media_player.play_media
@@ -365,10 +378,11 @@ lvgl:
                           media_content_id: "library://playlist/27"
               - button:
                   styles: control
-                  height: 48
-                  width: 128
+                  height: 66
+                  width: 136
+                  pad_all: 6
                   widgets:
-                    - label: {text: "Metallica", align: center}
+                    - label: {text: "Metallica", width: 100%, long_mode: DOT, text_align: center}
                   on_click:
                     - homeassistant.action:
                         action: media_player.play_media
@@ -380,10 +394,11 @@ lvgl:
                           media_content_id: "library://playlist/23"
               - button:
                   styles: control
-                  height: 48
-                  width: 128
+                  height: 66
+                  width: 136
+                  pad_all: 6
                   widgets:
-                    - label: {text: "Muse", align: center}
+                    - label: {text: "Muse", width: 100%, long_mode: DOT, text_align: center}
                   on_click:
                     - homeassistant.action:
                         action: media_player.play_media
