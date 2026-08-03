@@ -3,6 +3,11 @@ lvgl:
   byte_order: little_endian
   displays: my_display
   touchscreens: my_touchscreen
+  # Turns the native 480x800 portrait panel into an 800x480 landscape
+  # canvas (software rotation - touch coordinates adjust automatically).
+  # If the image comes out upside-down for your physical mounting, use
+  # 270 instead.
+  rotation: 90
 
   top_layer:
     widgets:
