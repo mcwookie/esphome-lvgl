@@ -22,8 +22,9 @@ http_request:
   verify_ssl: false
 
 # Cover art image, repointed at runtime via online_image.set_url
-online_image:
-  - id: cover_art
+image:
+  - platform: online_image
+    id: cover_art
     url: "https://www.home-assistant.io/images/favicon-192x192-full.png"
     format: JPEG
     type: RGB565
