@@ -5,7 +5,7 @@
 # EDIT THIS: point at your actual LAN-reachable Home Assistant URL (not 127.0.0.1 -
 # that only resolves inside HA's own container/host, not from another device on your network).
 substitutions:
-  ha_url: "http://192.168.1.10:8123"   # <-- CHANGE ME to your real Home Assistant LAN address
+  ha_url: "http://192.168.20.50:8123"   # <-- CHANGE ME to your real Home Assistant LAN address
 
 # Which media_player entity is currently being controlled/displayed.
 globals:
@@ -272,8 +272,8 @@ lvgl:
             id: volume_slider
             width: 90%
             height: 24
-            range_from: 0
-            range_to: 100
+            min_value: 0
+            max_value: 100
             value: 50
             align: center
             on_release:
