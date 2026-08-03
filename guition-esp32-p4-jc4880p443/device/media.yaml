@@ -5,7 +5,7 @@
 # EDIT THIS: point at your actual LAN-reachable Home Assistant URL (not 127.0.0.1 -
 # that only resolves inside HA's own container/host, not from another device on your network).
 substitutions:
-  ha_url: "http://192.168.20.50:8123"   # <-- CHANGE ME to your real Home Assistant LAN address
+  ha_url: "http://192.168.1.10:8123"   # <-- CHANGE ME to your real Home Assistant LAN address
 
 # Which media_player entity is currently being controlled/displayed.
 globals:
@@ -174,9 +174,9 @@ lvgl:
         # of the button's height that icons bled past the button into the
         # section below.
         - obj:
-            layout: {type: flex, flex_flow: row, pad_column: 10}
+            layout: {type: flex, flex_flow: row, flex_align_cross: center, pad_column: 10}
             width: 100%
-            height: 64
+            height: 68
             scrollable: false
             bg_opa: TRANSP
             border_width: 0
@@ -184,9 +184,9 @@ lvgl:
               - button:
                   id: player_roku_button
                   checkable: true
-                  height: 56
+                  height: 64
                   width: 170
-                  pad_all: 4
+                  pad_all: 2
                   styles: control
                   widgets:
                     - label: {text_font: $icon_font, text: "\U000F0502", align: LEFT_MID}   # mdi-television
@@ -199,9 +199,9 @@ lvgl:
               - button:
                   id: player_macmini_button
                   checkable: true
-                  height: 56
+                  height: 64
                   width: 170
-                  pad_all: 4
+                  pad_all: 2
                   styles: control
                   widgets:
                     - label: {text_font: $icon_font, text: "\U000F0322", align: LEFT_MID}   # mdi-laptop
@@ -251,18 +251,18 @@ lvgl:
         # `data_template:` string that Home Assistant renders on receipt -
         # putting `!lambda` directly under `data:` silently does nothing.
         - obj:
-            layout: {type: flex, flex_flow: row, flex_align_main: center, pad_column: 20}
+            layout: {type: flex, flex_flow: row, flex_align_main: center, flex_align_cross: center, pad_column: 20}
             width: 100%
-            height: 68
+            height: 74
             scrollable: false
             bg_opa: TRANSP
             border_width: 0
             widgets:
               - button:
                   styles: control
-                  height: 60
-                  width: 60
-                  pad_all: 4
+                  height: 70
+                  width: 70
+                  pad_all: 2
                   widgets:
                     - label: {text_font: $icon_font, text: "\U000F04AE", align: center}   # skip-previous
                   on_click:
@@ -275,9 +275,9 @@ lvgl:
               - button:
                   id: play_pause_button
                   styles: control
-                  height: 60
-                  width: 60
-                  pad_all: 4
+                  height: 70
+                  width: 70
+                  pad_all: 2
                   widgets:
                     - label: {id: play_pause_icon, text_font: $icon_font, text: "\U000F040A", align: center}
                   on_click:
@@ -289,9 +289,9 @@ lvgl:
                           entity_id: "{{ target_player }}"
               - button:
                   styles: control
-                  height: 60
-                  width: 60
-                  pad_all: 4
+                  height: 70
+                  width: 70
+                  pad_all: 2
                   widgets:
                     - label: {text_font: $icon_font, text: "\U000F04AD", align: center}   # skip-next
                   on_click:
