@@ -5,7 +5,7 @@
 # EDIT THIS: point at your actual LAN-reachable Home Assistant URL (not 127.0.0.1 -
 # that only resolves inside HA's own container/host, not from another device on your network).
 substitutions:
-  ha_url: "http://192.168.20.50:8123"   # <-- CHANGE ME to your real Home Assistant LAN address
+  ha_url: "http://192.168.1.10:8123"   # <-- CHANGE ME to your real Home Assistant LAN address
 
 # Which media_player entity is currently being controlled/displayed.
 globals:
@@ -178,8 +178,8 @@ lvgl:
                   width: 200
                   styles: control
                   widgets:
-                    - label: {text_font: $icon_font, text: "\U000F0502", align: left}   # mdi-television
-                    - label: {text: "Office Roku", align: right}
+                    - label: {text_font: $icon_font, text: "\U000F0502", align: LEFT_MID}   # mdi-television
+                    - label: {text: "Office Roku", align: RIGHT_MID}
                   on_press:
                     - lambda: 'id(current_player) = "media_player.roku_express_4k_office";'
                     - lvgl.widget.update: {id: player_roku_button, state: {checked: true}}
@@ -192,8 +192,8 @@ lvgl:
                   width: 200
                   styles: control
                   widgets:
-                    - label: {text_font: $icon_font, text: "\U000F0322", align: left}   # mdi-laptop
-                    - label: {text: "Mac mini", align: right}
+                    - label: {text_font: $icon_font, text: "\U000F0322", align: LEFT_MID}   # mdi-laptop
+                    - label: {text: "Mac mini", align: RIGHT_MID}
                   on_press:
                     - lambda: 'id(current_player) = "media_player.brians_mac_mini";'
                     - lvgl.widget.update: {id: player_roku_button, state: {checked: false}}
