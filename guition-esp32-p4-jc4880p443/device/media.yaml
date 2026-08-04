@@ -147,6 +147,176 @@ script:
             }
             return pic;
 
+# Wraps the playlist_dropdown widget as a proper select entity, exposing its
+# current choice via the on_value trigger's `x` (the selected option text) -
+# same convention as every other ESPHome domain's on_value trigger.
+select:
+  - platform: lvgl
+    widget: playlist_dropdown
+    id: playlist_select
+    on_value:
+      - homeassistant.action:
+          action: media_player.play_media
+          variables:
+            target_player: !lambda 'return id(current_player);'
+            playlist_id: !lambda |-
+              static const std::map<std::string, std::string> playlist_map = {
+                {"(untitled)", "library://playlist/72"},
+                {"The 50 Greatest Pieces Of Classical Music", "library://playlist/102"},
+                {"500 Random tracks (from library)", "library://playlist/4"},
+                {"80s Good Stuff", "library://playlist/60"},
+                {"80s Hard Rock", "library://playlist/34"},
+                {"80s HITS | TOP 100 SONGS", "library://playlist/71"},
+                {"A Beautiful Mine (Theme music from Mad Men)", "library://playlist/121"},
+                {"All favorited tracks", "library://playlist/1"},
+                {"Anger Management", "library://playlist/38"},
+                {"April 29, 1992 (Miami)", "library://playlist/114"},
+                {"Audioslave", "library://playlist/19"},
+                {"Avatar", "library://playlist/148"},
+                {"Avenged Sevenfold", "library://playlist/26"},
+                {"The Beatles", "library://playlist/62"},
+                {"Beck – Mutations", "library://playlist/122"},
+                {"Beethoven – Classical Best Of", "library://playlist/103"},
+                {"Beggin'", "library://playlist/39"},
+                {"Billy Joel – Greatest Hits Volume I & Volume II", "library://playlist/123"},
+                {"The Black Keys", "library://playlist/124"},
+                {"Bloodbound", "library://playlist/16"},
+                {"Bloodbound – Rise of the Dragon Empire", "library://playlist/56"},
+                {"Cage The Elephant – Cage The Elephant", "library://playlist/125"},
+                {"Cake", "library://playlist/65"},
+                {"Cinderella – Rocked, Wired & Bluesed: The Greatest Hits", "library://playlist/93"},
+                {"Coheed and Cambria – Playlist: The Very Best Of Coheed and Cambria", "library://playlist/78"},
+                {"The Cranberries – 20th Century Masters - The Millennium Collection: The Best Of The Cranberries", "library://playlist/108"},
+                {"The Cult", "library://playlist/107"},
+                {"The Dandy Warhols – The Capitol Years: 1995-2007", "library://playlist/111"},
+                {"The Darkness – Permission To Land", "library://playlist/101"},
+                {"David Bowie – Best Of Bowie", "library://playlist/109"},
+                {"David Bowie – Blackstar", "library://playlist/32"},
+                {"David Bowie: Best Of", "library://playlist/59"},
+                {"DJ", "library://playlist/22"},
+                {"Dreamtime", "library://playlist/126"},
+                {"Duran Duran – 80s", "library://playlist/64"},
+                {"Duran Duran – Greatest", "library://playlist/96"},
+                {"Eddie Murphy – Eddie Murphy", "library://playlist/120"},
+                {"Eminem – Recovery", "library://playlist/82"},
+                {"Epic & Melodic", "library://playlist/74"},
+                {"Evanescence - Fallen", "library://playlist/76"},
+                {"Foo Fighters (127)", "library://playlist/127"},
+                {"Foo Fighters (80)", "library://playlist/80"},
+                {"Garbage", "library://playlist/37"},
+                {"Good Stuff", "library://playlist/27"},
+                {"Gorillaz", "library://playlist/128"},
+                {"Guns N' Roses", "library://playlist/129"},
+                {"Guns N' Roses – Chinese Democracy", "library://playlist/130"},
+                {"The Hair Mix", "library://playlist/36"},
+                {"I Think I Love You", "library://playlist/115"},
+                {"Ice Ice Baby", "library://playlist/92"},
+                {"Infinite Mix (favorites)", "library://playlist/8"},
+                {"Infinite Mix (library)", "library://playlist/7"},
+                {"Iron Maiden – Somewhere Back In Time: The Best of 1980-1989", "library://playlist/87"},
+                {"JACK WHITE- BLUNDERBUSS", "library://playlist/105"},
+                {"John Williams – Star Wars", "library://playlist/68"},
+                {"Johnny Cash – The Essential Johnny Cash (1955-1983)", "library://playlist/131"},
+                {"Judas Priest - The Essential Judas Priest", "library://playlist/70"},
+                {"Katzenjammer – Le Pop", "library://playlist/132"},
+                {"Kelly Clarkson – Greatest Hits - Chapter One", "library://playlist/81"},
+                {"Killer Be Killed – Killer Be Killed", "library://playlist/57"},
+                {"The Killers", "library://playlist/28"},
+                {"The Killers – Imploding The Mirage 2", "library://playlist/24"},
+                {"The Killers – Live From The Royal Albert Hall", "library://playlist/47"},
+                {"Kiss – Playlist Plus", "library://playlist/110"},
+                {"Lady Gaga (113)", "library://playlist/113"},
+                {"Lady Gaga (133)", "library://playlist/133"},
+                {"Les Misérables Original London Cast – Les Misérables - Original London Cast Recording", "library://playlist/134"},
+                {"Liked Songs mcwook", "library://playlist/9"},
+                {"Linkin Park", "library://playlist/106"},
+                {"The Lonely Island", "library://playlist/98"},
+                {"The Lonely Island - Popstar: Never Stop Never Stopping", "library://playlist/67"},
+                {"Lordi – Sexorcism", "library://playlist/54"},
+                {"Megadeth", "library://playlist/11"},
+                {"Megadeth – Cryptic Writings", "library://playlist/86"},
+                {"Megadeth – Peace Sells...But Who's Buying?", "library://playlist/85"},
+                {"Megadeth – Rust In Peace", "library://playlist/84"},
+                {"Metal Essentials", "library://playlist/35"},
+                {"Metallica", "library://playlist/23"},
+                {"Metallica - S&M", "library://playlist/49"},
+                {"Metallica – Death Magnetic", "library://playlist/50"},
+                {"Metallica – Hardwired…To Self-Destruct", "library://playlist/66"},
+                {"Metallica – S&M2", "library://playlist/48"},
+                {"Midnight Oil – Blue Sky Mining", "library://playlist/136"},
+                {"The Monkees – The Best Of The Monkees", "library://playlist/118"},
+                {"Muse", "library://playlist/135"},
+                {"Mötley Crüe", "library://playlist/41"},
+                {"Mötley Crüe – The Greatest Hits", "library://playlist/137"},
+                {"Neil Diamond", "library://playlist/138"},
+                {"Nine Inch Nails – The Downward Spiral", "library://playlist/139"},
+                {"Nirvana – Nevermind", "library://playlist/94"},
+                {"No Doubt", "library://playlist/141"},
+                {"No Doubt – 2", "library://playlist/20"},
+                {"No Doubt – The Singles Collection", "library://playlist/140"},
+                {"Not Another Teen Movie Soundtrack – Music From The Motion Picture Not Another Teen Movie", "library://playlist/79"},
+                {"The Offspring – Greatest Hits", "library://playlist/95"},
+                {"Ozzy Osbourne", "library://playlist/25"},
+                {"P!nk - Greatest Hits...So Far!!!", "library://playlist/73"},
+                {"P!nk – The Truth About Love", "library://playlist/97"},
+                {"Pet Shop Boys - Discography - Complete Singles Collection", "library://playlist/31"},
+                {"Pet Shop Boys – PopArt: The Hits", "library://playlist/90"},
+                {"The Police – Every Breath You Take The Classics 2", "library://playlist/89"},
+                {"Poppy Girl Songs", "library://playlist/61"},
+                {"Pops Out Of This World", "library://playlist/17"},
+                {"Queen – Live At Wembley Stadium", "library://playlist/143"},
+                {"Queen – The Platinum Collection", "library://playlist/142"},
+                {"Queensryche – Empire - 20th Anniversary Edition", "library://playlist/144"},
+                {"Random Album (from library)", "library://playlist/3"},
+                {"Random Artist (from library)", "library://playlist/2"},
+                {"Recently added tracks", "library://playlist/6"},
+                {"Recently played tracks", "library://playlist/5"},
+                {"Red Hot Chili Peppers – Greatest Hits", "library://playlist/104"},
+                {"Requiem for a Tower", "library://playlist/69"},
+                {"Rush – Spirit Of Radio: Greatest Hits (1974-1987)", "library://playlist/58"},
+                {"Sabaton", "library://playlist/44"},
+                {"Sabaton – Heroes", "library://playlist/45"},
+                {"Sabaton – The Great War", "library://playlist/55"},
+                {"Sabaton – The Last Stand", "library://playlist/46"},
+                {"Sleigh Bells", "library://playlist/75"},
+                {"Songs that Build", "library://playlist/21"},
+                {"Supernatural Seasons 1- 7 (feel free to send me a message on facebook and I'll be happy to send you the zip of the composed OST)", "library://playlist/117"},
+                {"t.A.T.u.", "library://playlist/145"},
+                {"t.A.T.u. – t.A.T.u. - The Best", "library://playlist/29"},
+                {"Take On Me", "library://playlist/88"},
+                {"Tenacious D – Tenacious D", "library://playlist/63"},
+                {"This Is Fontaines D.C.", "library://playlist/13"},
+                {"This Is KISS", "library://playlist/33"},
+                {"This Is Muse", "library://playlist/30"},
+                {"This Is Musicalbasics (14)", "library://playlist/14"},
+                {"This Is Musicalbasics (15)", "library://playlist/15"},
+                {"This Is The Warning", "library://playlist/12"},
+                {"Thriller", "library://playlist/83"},
+                {"TOOL", "library://playlist/42"},
+                {"TOOL – Fear Inoculum", "library://playlist/43"},
+                {"Van Halen - David Lee Roth", "library://playlist/52"},
+                {"Van Halen - Sammy Hagar", "library://playlist/53"},
+                {"Van Halen – A Different Kind Of Truth", "library://playlist/119"},
+                {"Various Artists – Scott Pilgrim vs. the World (Original Motion Picture Soundtrack)", "library://playlist/116"},
+                {"Velvet Revolver", "library://playlist/77"},
+                {"Warrant – The Best Of Warrant", "library://playlist/91"},
+                {"Wax – Rosana (Produced By Nobody Famous)", "library://playlist/99"},
+                {"We Used To Be Friends", "library://playlist/112"},
+                {"Weezer", "library://playlist/146"},
+                {"Weezer – Weezer (Teal Album) 2", "library://playlist/51"},
+                {"The White Stripes", "library://playlist/100"},
+                {"Wonderboy", "library://playlist/147"},
+                {"Wonderful Wonderful (Deluxe)", "library://playlist/40"},
+                {"Your All-Time Top Songs", "library://playlist/10"},
+                {"Your Top Songs 2023", "library://playlist/18"},
+              };
+              auto it = playlist_map.find(x);
+              return (it != playlist_map.end()) ? it->second : std::string("");
+          data_template:
+            entity_id: "{{ target_player }}"
+            media_content_type: "playlist"
+            media_content_id: "{{ playlist_id }}"
+
 lvgl:
   pages:
     # Redesigned for the 800x480 landscape canvas (rotation: 90 above turns
@@ -324,9 +494,9 @@ lvgl:
                     entity_id: "{{ target_player }}"
                     volume_level: "{{ vol_value }}"
 
-        # --- Playlist shortcuts (Music Assistant library IDs) --- (48px rows)
+        # --- Playlist selector (all Music Assistant playlists) ---
         - obj:
-            layout: {type: flex, flex_flow: row_wrap, pad_row: 6, pad_column: 6}
+            layout: {type: flex, flex_flow: row, flex_align_cross: center, pad_column: 10}
             width: 100%
             height: SIZE_CONTENT
             pad_all: 0
@@ -334,99 +504,169 @@ lvgl:
             bg_opa: TRANSP
             border_width: 0
             widgets:
-              - button:
-                  styles: control
-                  height: 64
-                  width: 136
-                  pad_all: 6
-                  widgets:
-                    - label: {text: "Megadeth", width: 100%, long_mode: DOT, text_align: center}
-                  on_click:
-                    - homeassistant.action:
-                        action: media_player.play_media
-                        variables:
-                          target_player: !lambda 'return id(current_player);'
-                        data_template:
-                          entity_id: "{{ target_player }}"
-                          media_content_type: "playlist"
-                          media_content_id: "library://playlist/11"
-              - button:
-                  styles: control
-                  height: 64
-                  width: 136
-                  pad_all: 6
-                  widgets:
-                    - label: {text: "Avenged Sevenfold", width: 100%, long_mode: DOT, text_align: center}
-                  on_click:
-                    - homeassistant.action:
-                        action: media_player.play_media
-                        variables:
-                          target_player: !lambda 'return id(current_player);'
-                        data_template:
-                          entity_id: "{{ target_player }}"
-                          media_content_type: "playlist"
-                          media_content_id: "library://playlist/26"
-              - button:
-                  styles: control
-                  height: 64
-                  width: 136
-                  pad_all: 6
-                  widgets:
-                    - label: {text: "The Killers", width: 100%, long_mode: DOT, text_align: center}
-                  on_click:
-                    - homeassistant.action:
-                        action: media_player.play_media
-                        variables:
-                          target_player: !lambda 'return id(current_player);'
-                        data_template:
-                          entity_id: "{{ target_player }}"
-                          media_content_type: "playlist"
-                          media_content_id: "library://playlist/28"
-              - button:
-                  styles: control
-                  height: 64
-                  width: 136
-                  pad_all: 6
-                  widgets:
-                    - label: {text: "Good Stuff", width: 100%, long_mode: DOT, text_align: center}
-                  on_click:
-                    - homeassistant.action:
-                        action: media_player.play_media
-                        variables:
-                          target_player: !lambda 'return id(current_player);'
-                        data_template:
-                          entity_id: "{{ target_player }}"
-                          media_content_type: "playlist"
-                          media_content_id: "library://playlist/27"
-              - button:
-                  styles: control
-                  height: 64
-                  width: 136
-                  pad_all: 6
-                  widgets:
-                    - label: {text: "Metallica", width: 100%, long_mode: DOT, text_align: center}
-                  on_click:
-                    - homeassistant.action:
-                        action: media_player.play_media
-                        variables:
-                          target_player: !lambda 'return id(current_player);'
-                        data_template:
-                          entity_id: "{{ target_player }}"
-                          media_content_type: "playlist"
-                          media_content_id: "library://playlist/23"
-              - button:
-                  styles: control
-                  height: 64
-                  width: 136
-                  pad_all: 6
-                  widgets:
-                    - label: {text: "Muse", width: 100%, long_mode: DOT, text_align: center}
-                  on_click:
-                    - homeassistant.action:
-                        action: media_player.play_media
-                        variables:
-                          target_player: !lambda 'return id(current_player);'
-                        data_template:
-                          entity_id: "{{ target_player }}"
-                          media_content_type: "playlist"
-                          media_content_id: "library://playlist/135"
+              - label:
+                  text: "Playlist:"
+                  text_font: label_font
+                  text_color: 0xFFFFFF
+              - dropdown:
+                  id: playlist_dropdown
+                  flex_grow: 1
+                  height: 48
+                  text_font: label_font
+                  bg_color: 0x313131
+                  text_color: 0xFFFFFF
+                  dropdown_list:
+                    bg_color: 0x313131
+                    text_color: 0xFFFFFF
+                    selected:
+                      bg_color: 0xFF8C00
+                      text_color: 0xFFFFFF
+                  options:
+                  - "(untitled)"
+                  - "The 50 Greatest Pieces Of Classical Music"
+                  - "500 Random tracks (from library)"
+                  - "80s Good Stuff"
+                  - "80s Hard Rock"
+                  - "80s HITS | TOP 100 SONGS"
+                  - "A Beautiful Mine (Theme music from Mad Men)"
+                  - "All favorited tracks"
+                  - "Anger Management"
+                  - "April 29, 1992 (Miami)"
+                  - "Audioslave"
+                  - "Avatar"
+                  - "Avenged Sevenfold"
+                  - "The Beatles"
+                  - "Beck – Mutations"
+                  - "Beethoven – Classical Best Of"
+                  - "Beggin'"
+                  - "Billy Joel – Greatest Hits Volume I & Volume II"
+                  - "The Black Keys"
+                  - "Bloodbound"
+                  - "Bloodbound – Rise of the Dragon Empire"
+                  - "Cage The Elephant – Cage The Elephant"
+                  - "Cake"
+                  - "Cinderella – Rocked, Wired & Bluesed: The Greatest Hits"
+                  - "Coheed and Cambria – Playlist: The Very Best Of Coheed and Cambria"
+                  - "The Cranberries – 20th Century Masters - The Millennium Collection: The Best Of The Cranberries"
+                  - "The Cult"
+                  - "The Dandy Warhols – The Capitol Years: 1995-2007"
+                  - "The Darkness – Permission To Land"
+                  - "David Bowie – Best Of Bowie"
+                  - "David Bowie – Blackstar"
+                  - "David Bowie: Best Of"
+                  - "DJ"
+                  - "Dreamtime"
+                  - "Duran Duran – 80s"
+                  - "Duran Duran – Greatest"
+                  - "Eddie Murphy – Eddie Murphy"
+                  - "Eminem – Recovery"
+                  - "Epic & Melodic"
+                  - "Evanescence - Fallen"
+                  - "Foo Fighters (127)"
+                  - "Foo Fighters (80)"
+                  - "Garbage"
+                  - "Good Stuff"
+                  - "Gorillaz"
+                  - "Guns N' Roses"
+                  - "Guns N' Roses – Chinese Democracy"
+                  - "The Hair Mix"
+                  - "I Think I Love You"
+                  - "Ice Ice Baby"
+                  - "Infinite Mix (favorites)"
+                  - "Infinite Mix (library)"
+                  - "Iron Maiden – Somewhere Back In Time: The Best of 1980-1989"
+                  - "JACK WHITE- BLUNDERBUSS"
+                  - "John Williams – Star Wars"
+                  - "Johnny Cash – The Essential Johnny Cash (1955-1983)"
+                  - "Judas Priest - The Essential Judas Priest"
+                  - "Katzenjammer – Le Pop"
+                  - "Kelly Clarkson – Greatest Hits - Chapter One"
+                  - "Killer Be Killed – Killer Be Killed"
+                  - "The Killers"
+                  - "The Killers – Imploding The Mirage 2"
+                  - "The Killers – Live From The Royal Albert Hall"
+                  - "Kiss – Playlist Plus"
+                  - "Lady Gaga (113)"
+                  - "Lady Gaga (133)"
+                  - "Les Misérables Original London Cast – Les Misérables - Original London Cast Recording"
+                  - "Liked Songs mcwook"
+                  - "Linkin Park"
+                  - "The Lonely Island"
+                  - "The Lonely Island - Popstar: Never Stop Never Stopping"
+                  - "Lordi – Sexorcism"
+                  - "Megadeth"
+                  - "Megadeth – Cryptic Writings"
+                  - "Megadeth – Peace Sells...But Who's Buying?"
+                  - "Megadeth – Rust In Peace"
+                  - "Metal Essentials"
+                  - "Metallica"
+                  - "Metallica - S&M"
+                  - "Metallica – Death Magnetic"
+                  - "Metallica – Hardwired…To Self-Destruct"
+                  - "Metallica – S&M2"
+                  - "Midnight Oil – Blue Sky Mining"
+                  - "The Monkees – The Best Of The Monkees"
+                  - "Muse"
+                  - "Mötley Crüe"
+                  - "Mötley Crüe – The Greatest Hits"
+                  - "Neil Diamond"
+                  - "Nine Inch Nails – The Downward Spiral"
+                  - "Nirvana – Nevermind"
+                  - "No Doubt"
+                  - "No Doubt – 2"
+                  - "No Doubt – The Singles Collection"
+                  - "Not Another Teen Movie Soundtrack – Music From The Motion Picture Not Another Teen Movie"
+                  - "The Offspring – Greatest Hits"
+                  - "Ozzy Osbourne"
+                  - "P!nk - Greatest Hits...So Far!!!"
+                  - "P!nk – The Truth About Love"
+                  - "Pet Shop Boys - Discography - Complete Singles Collection"
+                  - "Pet Shop Boys – PopArt: The Hits"
+                  - "The Police – Every Breath You Take The Classics 2"
+                  - "Poppy Girl Songs"
+                  - "Pops Out Of This World"
+                  - "Queen – Live At Wembley Stadium"
+                  - "Queen – The Platinum Collection"
+                  - "Queensryche – Empire - 20th Anniversary Edition"
+                  - "Random Album (from library)"
+                  - "Random Artist (from library)"
+                  - "Recently added tracks"
+                  - "Recently played tracks"
+                  - "Red Hot Chili Peppers – Greatest Hits"
+                  - "Requiem for a Tower"
+                  - "Rush – Spirit Of Radio: Greatest Hits (1974-1987)"
+                  - "Sabaton"
+                  - "Sabaton – Heroes"
+                  - "Sabaton – The Great War"
+                  - "Sabaton – The Last Stand"
+                  - "Sleigh Bells"
+                  - "Songs that Build"
+                  - "Supernatural Seasons 1- 7 (feel free to send me a message on facebook and I'll be happy to send you the zip of the composed OST)"
+                  - "t.A.T.u."
+                  - "t.A.T.u. – t.A.T.u. - The Best"
+                  - "Take On Me"
+                  - "Tenacious D – Tenacious D"
+                  - "This Is Fontaines D.C."
+                  - "This Is KISS"
+                  - "This Is Muse"
+                  - "This Is Musicalbasics (14)"
+                  - "This Is Musicalbasics (15)"
+                  - "This Is The Warning"
+                  - "Thriller"
+                  - "TOOL"
+                  - "TOOL – Fear Inoculum"
+                  - "Van Halen - David Lee Roth"
+                  - "Van Halen - Sammy Hagar"
+                  - "Van Halen – A Different Kind Of Truth"
+                  - "Various Artists – Scott Pilgrim vs. the World (Original Motion Picture Soundtrack)"
+                  - "Velvet Revolver"
+                  - "Warrant – The Best Of Warrant"
+                  - "Wax – Rosana (Produced By Nobody Famous)"
+                  - "We Used To Be Friends"
+                  - "Weezer"
+                  - "Weezer – Weezer (Teal Album) 2"
+                  - "The White Stripes"
+                  - "Wonderboy"
+                  - "Wonderful Wonderful (Deluxe)"
+                  - "Your All-Time Top Songs"
+                  - "Your Top Songs 2023"

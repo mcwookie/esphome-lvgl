@@ -9,6 +9,11 @@ font:
     id: label_font
     size: 22
     bpp: 4
+    # Explicit glyphs override ESPHome's tiny default set (which lacks
+    # accented Latin letters, en/em dashes, ellipsis, and curly quotes) -
+    # needed for real Music Assistant playlist/track/artist names (e.g.
+    # "Mötley Crüe", "Artist – Album"), not just plain ASCII.
+    glyphs: ' !"#$%&''()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~éöü–…—‘’“”'
 
   - file: "gfonts://Roboto"
     id: clockbar_font
