@@ -90,7 +90,7 @@ script:
       - lvgl.label.update:
           id: play_pause_icon
           text: !lambda |-
-            return (id(speaker_state).state == "playing") ? "\U000F03E4" : "\U000F040A";
+            return (id(speaker_state).state == "playing") ? std::string("\U000F03E4") : std::string("\U000F040A");
       - lvgl.slider.update:
           id: volume_slider
           value: !lambda 'return (int)(id(speaker_volume).state * 100);'
