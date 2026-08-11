@@ -113,7 +113,7 @@ lvgl:
       layout:
         type: flex
         flex_flow: column
-        pad_row: 8
+        pad_row: 28
       width: 100%
       scrollable: false
       bg_color: Black
@@ -166,7 +166,7 @@ lvgl:
         - obj:
             layout: {type: flex, flex_flow: row, flex_align_main: center, flex_align_cross: center, pad_column: 20}
             width: 100%
-            height: 78
+            height: 100
             pad_all: 0
             scrollable: false
             bg_opa: TRANSP
@@ -174,9 +174,9 @@ lvgl:
             widgets:
               - button:
                   styles: control
-                  height: 70
-                  width: 70
-                  pad_all: 2
+                  height: 90
+                  width: 90
+                  pad_all: 3
                   widgets:
                     - label: {text_font: $icon_font, text: "\U000F04AE", align: center}   # skip-previous
                   on_click:
@@ -187,9 +187,9 @@ lvgl:
               - button:
                   id: play_pause_button
                   styles: control
-                  height: 70
-                  width: 70
-                  pad_all: 2
+                  height: 90
+                  width: 90
+                  pad_all: 3
                   widgets:
                     - label: {id: play_pause_icon, text_font: $icon_font, text: "\U000F040A", align: center}
                   on_click:
@@ -199,9 +199,9 @@ lvgl:
                           entity_id: "media_player.loud_esp32"
               - button:
                   styles: control
-                  height: 70
-                  width: 70
-                  pad_all: 2
+                  height: 90
+                  width: 90
+                  pad_all: 3
                   widgets:
                     - label: {text_font: $icon_font, text: "\U000F04AD", align: center}   # skip-next
                   on_click:
@@ -210,11 +210,11 @@ lvgl:
                         data_template:
                           entity_id: "media_player.loud_esp32"
 
-        # --- Volume --- (height 20)
+        # --- Volume --- (height 24)
         - slider:
             id: volume_slider
             width: 90%
-            height: 20
+            height: 24
             min_value: 0
             max_value: 100
             value: 50
