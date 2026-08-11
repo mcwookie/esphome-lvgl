@@ -7,12 +7,10 @@
 substitutions:
   ha_url: "http://192.168.1.10:8123"   # <-- CHANGE ME to your real Home Assistant LAN address
 
-# Which media_player entity is currently being controlled/displayed.
-globals:
-  - id: current_player
-    type: std::string
-    restore_value: false
-    initial_value: '"media_player.roku_express_4k_office"'
+# Single-player build: this panel now controls only media_player.loud_esp32
+# ("office-desk-speaker"). No player-select UI or per-player branching is
+# needed - if you add a second controllable player later, reintroduce the
+# current_player global + player-select row + per-player sensor sets.
 
 # Required by online_image below - performs the actual HTTP(S) fetch.
 # verify_ssl: false avoids needing to bundle CA certs for the various https
@@ -43,283 +41,74 @@ image:
           id: cover_art_widget
           src: cover_art
 
-# One text_sensor/sensor per attribute, per player. Cheap to keep both live;
-# refresh_display() below picks whichever one matches the current selection.
 text_sensor:
   - platform: homeassistant
-    id: roku_state
-    entity_id: media_player.roku_express_4k_office
+    id: speaker_state
+    entity_id: media_player.loud_esp32
     on_value:
       - script.execute: refresh_display
   - platform: homeassistant
-    id: roku_media_title
-    entity_id: media_player.roku_express_4k_office
+    id: speaker_media_title
+    entity_id: media_player.loud_esp32
     attribute: media_title
     on_value:
       - script.execute: refresh_display
   - platform: homeassistant
-    id: roku_media_artist
-    entity_id: media_player.roku_express_4k_office
+    id: speaker_media_artist
+    entity_id: media_player.loud_esp32
     attribute: media_artist
     on_value:
       - script.execute: refresh_display
   - platform: homeassistant
-    id: roku_entity_picture
-    entity_id: media_player.roku_express_4k_office
-    attribute: entity_picture
-    on_value:
-      - script.execute: refresh_display
-
-  - platform: homeassistant
-    id: macmini_state
-    entity_id: media_player.brians_mac_mini
-    on_value:
-      - script.execute: refresh_display
-  - platform: homeassistant
-    id: macmini_media_title
-    entity_id: media_player.brians_mac_mini
-    attribute: media_title
-    on_value:
-      - script.execute: refresh_display
-  - platform: homeassistant
-    id: macmini_media_artist
-    entity_id: media_player.brians_mac_mini
-    attribute: media_artist
-    on_value:
-      - script.execute: refresh_display
-  - platform: homeassistant
-    id: macmini_entity_picture
-    entity_id: media_player.brians_mac_mini
+    id: speaker_entity_picture
+    entity_id: media_player.loud_esp32
     attribute: entity_picture
     on_value:
       - script.execute: refresh_display
 
 sensor:
   - platform: homeassistant
-    id: roku_volume
-    entity_id: media_player.roku_express_4k_office
-    attribute: volume_level
-    on_value:
-      - script.execute: refresh_display
-  - platform: homeassistant
-    id: macmini_volume
-    entity_id: media_player.brians_mac_mini
+    id: speaker_volume
+    entity_id: media_player.loud_esp32
     attribute: volume_level
     on_value:
       - script.execute: refresh_display
 
-# Pulls whichever player's cached sensor values match id(current_player) onto
-# the shared widgets. Called on every sensor update AND on player-switch.
-# (These stay as plain C++ lambdas - refresh_display runs entirely inside the
-# device, no Home Assistant service call involved, so inline !lambda is fine here.)
+# Pulls the current sensor values onto the shared widgets. Called on every
+# sensor update. (These stay as plain C++ lambdas - refresh_display runs
+# entirely inside the device, no Home Assistant service call involved, so
+# inline !lambda is fine here.)
 script:
   - id: refresh_display
     then:
       - lvgl.label.update:
           id: media_title_label
-          text: !lambda |-
-            return (id(current_player) == "media_player.roku_express_4k_office")
-              ? id(roku_media_title).state : id(macmini_media_title).state;
+          text: !lambda 'return id(speaker_media_title).state;'
       - lvgl.label.update:
           id: media_artist_label
-          text: !lambda |-
-            return (id(current_player) == "media_player.roku_express_4k_office")
-              ? id(roku_media_artist).state : id(macmini_media_artist).state;
+          text: !lambda 'return id(speaker_media_artist).state;'
       - lvgl.label.update:
           id: play_pause_icon
           text: !lambda |-
-            std::string st = (id(current_player) == "media_player.roku_express_4k_office")
-              ? id(roku_state).state : id(macmini_state).state;
-            return (st == "playing") ? "\U000F03E4" : "\U000F040A";
+            return (id(speaker_state).state == "playing") ? "\U000F03E4" : "\U000F040A";
       - lvgl.slider.update:
           id: volume_slider
-          value: !lambda |-
-            float v = (id(current_player) == "media_player.roku_express_4k_office")
-              ? id(roku_volume).state : id(macmini_volume).state;
-            return (int)(v * 100);
+          value: !lambda 'return (int)(id(speaker_volume).state * 100);'
       - online_image.set_url:
           id: cover_art
           url: !lambda |-
-            std::string pic = (id(current_player) == "media_player.roku_express_4k_office")
-              ? id(roku_entity_picture).state : id(macmini_entity_picture).state;
+            std::string pic = id(speaker_entity_picture).state;
             if (!pic.empty() && pic.rfind("http", 0) != 0) {
               pic = std::string("${ha_url}") + pic;
             }
             return pic;
 
-# Wraps the playlist_dropdown widget as a proper select entity, exposing its
-# current choice via the on_value trigger's `x` (the selected option text) -
-# same convention as every other ESPHome domain's on_value trigger.
-select:
-  - platform: lvgl
-    widget: playlist_dropdown
-    id: playlist_select
-    on_value:
-      - homeassistant.action:
-          action: media_player.play_media
-          variables:
-            target_player: !lambda 'return id(current_player);'
-            playlist_id: !lambda |-
-              if (x == "(untitled)") return std::string("library://playlist/72");
-              else if (x == "The 50 Greatest Pieces Of Classical Music") return std::string("library://playlist/102");
-              else if (x == "500 Random tracks (from library)") return std::string("library://playlist/4");
-              else if (x == "80s Good Stuff") return std::string("library://playlist/60");
-              else if (x == "80s Hard Rock") return std::string("library://playlist/34");
-              else if (x == "80s HITS | TOP 100 SONGS") return std::string("library://playlist/71");
-              else if (x == "A Beautiful Mine (Theme music from Mad Men)") return std::string("library://playlist/121");
-              else if (x == "All favorited tracks") return std::string("library://playlist/1");
-              else if (x == "Anger Management") return std::string("library://playlist/38");
-              else if (x == "April 29, 1992 (Miami)") return std::string("library://playlist/114");
-              else if (x == "Audioslave") return std::string("library://playlist/19");
-              else if (x == "Avatar") return std::string("library://playlist/148");
-              else if (x == "Avenged Sevenfold") return std::string("library://playlist/26");
-              else if (x == "The Beatles") return std::string("library://playlist/62");
-              else if (x == "Beck – Mutations") return std::string("library://playlist/122");
-              else if (x == "Beethoven – Classical Best Of") return std::string("library://playlist/103");
-              else if (x == "Beggin'") return std::string("library://playlist/39");
-              else if (x == "Billy Joel – Greatest Hits Volume I & Volume II") return std::string("library://playlist/123");
-              else if (x == "The Black Keys") return std::string("library://playlist/124");
-              else if (x == "Bloodbound") return std::string("library://playlist/16");
-              else if (x == "Bloodbound – Rise of the Dragon Empire") return std::string("library://playlist/56");
-              else if (x == "Cage The Elephant – Cage The Elephant") return std::string("library://playlist/125");
-              else if (x == "Cake") return std::string("library://playlist/65");
-              else if (x == "Cinderella – Rocked, Wired & Bluesed: The Greatest Hits") return std::string("library://playlist/93");
-              else if (x == "Coheed and Cambria – Playlist: The Very Best Of Coheed and Cambria") return std::string("library://playlist/78");
-              else if (x == "The Cranberries – 20th Century Masters - The Millennium Collection: The Best Of The Cranberries") return std::string("library://playlist/108");
-              else if (x == "The Cult") return std::string("library://playlist/107");
-              else if (x == "The Dandy Warhols – The Capitol Years: 1995-2007") return std::string("library://playlist/111");
-              else if (x == "The Darkness – Permission To Land") return std::string("library://playlist/101");
-              else if (x == "David Bowie – Best Of Bowie") return std::string("library://playlist/109");
-              else if (x == "David Bowie – Blackstar") return std::string("library://playlist/32");
-              else if (x == "David Bowie: Best Of") return std::string("library://playlist/59");
-              else if (x == "DJ") return std::string("library://playlist/22");
-              else if (x == "Dreamtime") return std::string("library://playlist/126");
-              else if (x == "Duran Duran – 80s") return std::string("library://playlist/64");
-              else if (x == "Duran Duran – Greatest") return std::string("library://playlist/96");
-              else if (x == "Eddie Murphy – Eddie Murphy") return std::string("library://playlist/120");
-              else if (x == "Eminem – Recovery") return std::string("library://playlist/82");
-              else if (x == "Epic & Melodic") return std::string("library://playlist/74");
-              else if (x == "Evanescence - Fallen") return std::string("library://playlist/76");
-              else if (x == "Foo Fighters (127)") return std::string("library://playlist/127");
-              else if (x == "Foo Fighters (80)") return std::string("library://playlist/80");
-              else if (x == "Garbage") return std::string("library://playlist/37");
-              else if (x == "Good Stuff") return std::string("library://playlist/27");
-              else if (x == "Gorillaz") return std::string("library://playlist/128");
-              else if (x == "Guns N' Roses") return std::string("library://playlist/129");
-              else if (x == "Guns N' Roses – Chinese Democracy") return std::string("library://playlist/130");
-              else if (x == "The Hair Mix") return std::string("library://playlist/36");
-              else if (x == "I Think I Love You") return std::string("library://playlist/115");
-              else if (x == "Ice Ice Baby") return std::string("library://playlist/92");
-              else if (x == "Infinite Mix (favorites)") return std::string("library://playlist/8");
-              else if (x == "Infinite Mix (library)") return std::string("library://playlist/7");
-              else if (x == "Iron Maiden – Somewhere Back In Time: The Best of 1980-1989") return std::string("library://playlist/87");
-              else if (x == "JACK WHITE- BLUNDERBUSS") return std::string("library://playlist/105");
-              else if (x == "John Williams – Star Wars") return std::string("library://playlist/68");
-              else if (x == "Johnny Cash – The Essential Johnny Cash (1955-1983)") return std::string("library://playlist/131");
-              else if (x == "Judas Priest - The Essential Judas Priest") return std::string("library://playlist/70");
-              else if (x == "Katzenjammer – Le Pop") return std::string("library://playlist/132");
-              else if (x == "Kelly Clarkson – Greatest Hits - Chapter One") return std::string("library://playlist/81");
-              else if (x == "Killer Be Killed – Killer Be Killed") return std::string("library://playlist/57");
-              else if (x == "The Killers") return std::string("library://playlist/28");
-              else if (x == "The Killers – Imploding The Mirage 2") return std::string("library://playlist/24");
-              else if (x == "The Killers – Live From The Royal Albert Hall") return std::string("library://playlist/47");
-              else if (x == "Kiss – Playlist Plus") return std::string("library://playlist/110");
-              else if (x == "Lady Gaga (113)") return std::string("library://playlist/113");
-              else if (x == "Lady Gaga (133)") return std::string("library://playlist/133");
-              else if (x == "Les Misérables Original London Cast – Les Misérables - Original London Cast Recording") return std::string("library://playlist/134");
-              else if (x == "Liked Songs mcwook") return std::string("library://playlist/9");
-              else if (x == "Linkin Park") return std::string("library://playlist/106");
-              else if (x == "The Lonely Island") return std::string("library://playlist/98");
-              else if (x == "The Lonely Island - Popstar: Never Stop Never Stopping") return std::string("library://playlist/67");
-              else if (x == "Lordi – Sexorcism") return std::string("library://playlist/54");
-              else if (x == "Megadeth") return std::string("library://playlist/11");
-              else if (x == "Megadeth – Cryptic Writings") return std::string("library://playlist/86");
-              else if (x == "Megadeth – Peace Sells...But Who's Buying?") return std::string("library://playlist/85");
-              else if (x == "Megadeth – Rust In Peace") return std::string("library://playlist/84");
-              else if (x == "Metal Essentials") return std::string("library://playlist/35");
-              else if (x == "Metallica") return std::string("library://playlist/23");
-              else if (x == "Metallica - S&M") return std::string("library://playlist/49");
-              else if (x == "Metallica – Death Magnetic") return std::string("library://playlist/50");
-              else if (x == "Metallica – Hardwired…To Self-Destruct") return std::string("library://playlist/66");
-              else if (x == "Metallica – S&M2") return std::string("library://playlist/48");
-              else if (x == "Midnight Oil – Blue Sky Mining") return std::string("library://playlist/136");
-              else if (x == "The Monkees – The Best Of The Monkees") return std::string("library://playlist/118");
-              else if (x == "Muse") return std::string("library://playlist/135");
-              else if (x == "Mötley Crüe") return std::string("library://playlist/41");
-              else if (x == "Mötley Crüe – The Greatest Hits") return std::string("library://playlist/137");
-              else if (x == "Neil Diamond") return std::string("library://playlist/138");
-              else if (x == "Nine Inch Nails – The Downward Spiral") return std::string("library://playlist/139");
-              else if (x == "Nirvana – Nevermind") return std::string("library://playlist/94");
-              else if (x == "No Doubt") return std::string("library://playlist/141");
-              else if (x == "No Doubt – 2") return std::string("library://playlist/20");
-              else if (x == "No Doubt – The Singles Collection") return std::string("library://playlist/140");
-              else if (x == "Not Another Teen Movie Soundtrack – Music From The Motion Picture Not Another Teen Movie") return std::string("library://playlist/79");
-              else if (x == "The Offspring – Greatest Hits") return std::string("library://playlist/95");
-              else if (x == "Ozzy Osbourne") return std::string("library://playlist/25");
-              else if (x == "P!nk - Greatest Hits...So Far!!!") return std::string("library://playlist/73");
-              else if (x == "P!nk – The Truth About Love") return std::string("library://playlist/97");
-              else if (x == "Pet Shop Boys - Discography - Complete Singles Collection") return std::string("library://playlist/31");
-              else if (x == "Pet Shop Boys – PopArt: The Hits") return std::string("library://playlist/90");
-              else if (x == "The Police – Every Breath You Take The Classics 2") return std::string("library://playlist/89");
-              else if (x == "Poppy Girl Songs") return std::string("library://playlist/61");
-              else if (x == "Pops Out Of This World") return std::string("library://playlist/17");
-              else if (x == "Queen – Live At Wembley Stadium") return std::string("library://playlist/143");
-              else if (x == "Queen – The Platinum Collection") return std::string("library://playlist/142");
-              else if (x == "Queensryche – Empire - 20th Anniversary Edition") return std::string("library://playlist/144");
-              else if (x == "Random Album (from library)") return std::string("library://playlist/3");
-              else if (x == "Random Artist (from library)") return std::string("library://playlist/2");
-              else if (x == "Recently added tracks") return std::string("library://playlist/6");
-              else if (x == "Recently played tracks") return std::string("library://playlist/5");
-              else if (x == "Red Hot Chili Peppers – Greatest Hits") return std::string("library://playlist/104");
-              else if (x == "Requiem for a Tower") return std::string("library://playlist/69");
-              else if (x == "Rush – Spirit Of Radio: Greatest Hits (1974-1987)") return std::string("library://playlist/58");
-              else if (x == "Sabaton") return std::string("library://playlist/44");
-              else if (x == "Sabaton – Heroes") return std::string("library://playlist/45");
-              else if (x == "Sabaton – The Great War") return std::string("library://playlist/55");
-              else if (x == "Sabaton – The Last Stand") return std::string("library://playlist/46");
-              else if (x == "Sleigh Bells") return std::string("library://playlist/75");
-              else if (x == "Songs that Build") return std::string("library://playlist/21");
-              else if (x == "Supernatural Seasons 1- 7 (feel free to send me a message on facebook and I'll be happy to send you the zip of the composed OST)") return std::string("library://playlist/117");
-              else if (x == "t.A.T.u.") return std::string("library://playlist/145");
-              else if (x == "t.A.T.u. – t.A.T.u. - The Best") return std::string("library://playlist/29");
-              else if (x == "Take On Me") return std::string("library://playlist/88");
-              else if (x == "Tenacious D – Tenacious D") return std::string("library://playlist/63");
-              else if (x == "This Is Fontaines D.C.") return std::string("library://playlist/13");
-              else if (x == "This Is KISS") return std::string("library://playlist/33");
-              else if (x == "This Is Muse") return std::string("library://playlist/30");
-              else if (x == "This Is Musicalbasics (14)") return std::string("library://playlist/14");
-              else if (x == "This Is Musicalbasics (15)") return std::string("library://playlist/15");
-              else if (x == "This Is The Warning") return std::string("library://playlist/12");
-              else if (x == "Thriller") return std::string("library://playlist/83");
-              else if (x == "TOOL") return std::string("library://playlist/42");
-              else if (x == "TOOL – Fear Inoculum") return std::string("library://playlist/43");
-              else if (x == "Van Halen - David Lee Roth") return std::string("library://playlist/52");
-              else if (x == "Van Halen - Sammy Hagar") return std::string("library://playlist/53");
-              else if (x == "Van Halen – A Different Kind Of Truth") return std::string("library://playlist/119");
-              else if (x == "Various Artists – Scott Pilgrim vs. the World (Original Motion Picture Soundtrack)") return std::string("library://playlist/116");
-              else if (x == "Velvet Revolver") return std::string("library://playlist/77");
-              else if (x == "Warrant – The Best Of Warrant") return std::string("library://playlist/91");
-              else if (x == "Wax – Rosana (Produced By Nobody Famous)") return std::string("library://playlist/99");
-              else if (x == "We Used To Be Friends") return std::string("library://playlist/112");
-              else if (x == "Weezer") return std::string("library://playlist/146");
-              else if (x == "Weezer – Weezer (Teal Album) 2") return std::string("library://playlist/51");
-              else if (x == "The White Stripes") return std::string("library://playlist/100");
-              else if (x == "Wonderboy") return std::string("library://playlist/147");
-              else if (x == "Wonderful Wonderful (Deluxe)") return std::string("library://playlist/40");
-              else if (x == "Your All-Time Top Songs") return std::string("library://playlist/10");
-              else if (x == "Your Top Songs 2023") return std::string("library://playlist/18");
-              return std::string("");
-          data_template:
-            entity_id: "{{ target_player }}"
-            media_content_type: "playlist"
-            media_content_id: "{{ playlist_id }}"
-
 lvgl:
   pages:
-    # Redesigned for the 800x480 landscape canvas (rotation: 90 above turns
-    # the native 480x800 portrait panel sideways). Everything is shorter and
-    # the now-playing section is a ROW (art beside text) instead of a COLUMN
-    # (art above text), since height is now the scarce dimension, not width.
+    # Redesigned for the 800x480 landscape canvas (rotation: 90 in
+    # device/lvgl.yaml turns the native 480x800 portrait panel sideways).
+    # The now-playing section is a ROW (art beside text) instead of a COLUMN,
+    # since height is the scarce dimension here, not width.
     - id: music_page
       layout:
         type: flex
@@ -335,52 +124,7 @@ lvgl:
       pad_right: 10
 
       widgets:
-        # --- Player selector --- (height 64)
-        # pad_all overridden to 4 (theme default is 14px) - icon_font glyphs
-        # are 48px tall, and the theme's default padding was eating enough
-        # of the button's height that icons bled past the button into the
-        # section below.
-        - obj:
-            layout: {type: flex, flex_flow: row, flex_align_cross: center, pad_column: 10}
-            width: 100%
-            height: 70
-            pad_all: 0
-            scrollable: false
-            bg_opa: TRANSP
-            border_width: 0
-            widgets:
-              - button:
-                  id: player_roku_button
-                  checkable: true
-                  height: 64
-                  width: 170
-                  pad_all: 2
-                  styles: control
-                  widgets:
-                    - label: {text_font: $icon_font, text: "\U000F0502", align: LEFT_MID}   # mdi-television
-                    - label: {text: "Office Roku", align: RIGHT_MID}
-                  on_press:
-                    - lambda: 'id(current_player) = "media_player.roku_express_4k_office";'
-                    - lvgl.widget.update: {id: player_roku_button, state: {checked: true}}
-                    - lvgl.widget.update: {id: player_macmini_button, state: {checked: false}}
-                    - script.execute: refresh_display
-              - button:
-                  id: player_macmini_button
-                  checkable: true
-                  height: 64
-                  width: 170
-                  pad_all: 2
-                  styles: control
-                  widgets:
-                    - label: {text_font: $icon_font, text: "\U000F0322", align: LEFT_MID}   # mdi-laptop
-                    - label: {text: "Mac mini", align: RIGHT_MID}
-                  on_press:
-                    - lambda: 'id(current_player) = "media_player.brians_mac_mini";'
-                    - lvgl.widget.update: {id: player_roku_button, state: {checked: false}}
-                    - lvgl.widget.update: {id: player_macmini_button, state: {checked: true}}
-                    - script.execute: refresh_display
-
-        # --- Now playing --- (row: art beside text, height 104)
+        # --- Now playing --- (row: art beside text)
         - obj:
             layout: {type: flex, flex_flow: row, flex_align_main: start, flex_align_cross: center, pad_column: 14}
             width: 100%
@@ -414,7 +158,7 @@ lvgl:
                         text_font: label_font
                         text_color: 0xAAAAAA
 
-        # --- Transport controls --- (height 68)
+        # --- Transport controls --- (height 78)
         # NOTE: homeassistant.action's `data:` fields must be STATIC. Runtime
         # (lambda-derived) values have to go through `variables:` + a Jinja
         # `data_template:` string that Home Assistant renders on receipt -
@@ -438,10 +182,8 @@ lvgl:
                   on_click:
                     - homeassistant.action:
                         action: media_player.media_previous_track
-                        variables:
-                          target_player: !lambda 'return id(current_player);'
                         data_template:
-                          entity_id: "{{ target_player }}"
+                          entity_id: "media_player.loud_esp32"
               - button:
                   id: play_pause_button
                   styles: control
@@ -453,10 +195,8 @@ lvgl:
                   on_click:
                     - homeassistant.action:
                         action: media_player.media_play_pause
-                        variables:
-                          target_player: !lambda 'return id(current_player);'
                         data_template:
-                          entity_id: "{{ target_player }}"
+                          entity_id: "media_player.loud_esp32"
               - button:
                   styles: control
                   height: 70
@@ -467,10 +207,8 @@ lvgl:
                   on_click:
                     - homeassistant.action:
                         action: media_player.media_next_track
-                        variables:
-                          target_player: !lambda 'return id(current_player);'
                         data_template:
-                          entity_id: "{{ target_player }}"
+                          entity_id: "media_player.loud_esp32"
 
         # --- Volume --- (height 20)
         - slider:
@@ -485,15 +223,14 @@ lvgl:
               - homeassistant.action:
                   action: media_player.volume_set
                   variables:
-                    target_player: !lambda 'return id(current_player);'
                     vol_value: !lambda 'return x / 100.0f;'
                   data_template:
-                    entity_id: "{{ target_player }}"
+                    entity_id: "media_player.loud_esp32"
                     volume_level: "{{ vol_value }}"
 
-        # --- Playlist selector (all Music Assistant playlists) ---
+        # --- Playlist shortcuts (Music Assistant library IDs) --- (64px rows)
         - obj:
-            layout: {type: flex, flex_flow: row, flex_align_cross: center, pad_column: 10}
+            layout: {type: flex, flex_flow: row_wrap, pad_row: 6, pad_column: 6}
             width: 100%
             height: SIZE_CONTENT
             pad_all: 0
@@ -501,169 +238,87 @@ lvgl:
             bg_opa: TRANSP
             border_width: 0
             widgets:
-              - label:
-                  text: "Playlist:"
-                  text_font: label_font
-                  text_color: 0xFFFFFF
-              - dropdown:
-                  id: playlist_dropdown
-                  flex_grow: 1
-                  height: 48
-                  text_font: label_font
-                  bg_color: 0x313131
-                  text_color: 0xFFFFFF
-                  dropdown_list:
-                    bg_color: 0x313131
-                    text_color: 0xFFFFFF
-                    selected:
-                      bg_color: 0xFF8C00
-                      text_color: 0xFFFFFF
-                  options:
-                  - "(untitled)"
-                  - "The 50 Greatest Pieces Of Classical Music"
-                  - "500 Random tracks (from library)"
-                  - "80s Good Stuff"
-                  - "80s Hard Rock"
-                  - "80s HITS | TOP 100 SONGS"
-                  - "A Beautiful Mine (Theme music from Mad Men)"
-                  - "All favorited tracks"
-                  - "Anger Management"
-                  - "April 29, 1992 (Miami)"
-                  - "Audioslave"
-                  - "Avatar"
-                  - "Avenged Sevenfold"
-                  - "The Beatles"
-                  - "Beck – Mutations"
-                  - "Beethoven – Classical Best Of"
-                  - "Beggin'"
-                  - "Billy Joel – Greatest Hits Volume I & Volume II"
-                  - "The Black Keys"
-                  - "Bloodbound"
-                  - "Bloodbound – Rise of the Dragon Empire"
-                  - "Cage The Elephant – Cage The Elephant"
-                  - "Cake"
-                  - "Cinderella – Rocked, Wired & Bluesed: The Greatest Hits"
-                  - "Coheed and Cambria – Playlist: The Very Best Of Coheed and Cambria"
-                  - "The Cranberries – 20th Century Masters - The Millennium Collection: The Best Of The Cranberries"
-                  - "The Cult"
-                  - "The Dandy Warhols – The Capitol Years: 1995-2007"
-                  - "The Darkness – Permission To Land"
-                  - "David Bowie – Best Of Bowie"
-                  - "David Bowie – Blackstar"
-                  - "David Bowie: Best Of"
-                  - "DJ"
-                  - "Dreamtime"
-                  - "Duran Duran – 80s"
-                  - "Duran Duran – Greatest"
-                  - "Eddie Murphy – Eddie Murphy"
-                  - "Eminem – Recovery"
-                  - "Epic & Melodic"
-                  - "Evanescence - Fallen"
-                  - "Foo Fighters (127)"
-                  - "Foo Fighters (80)"
-                  - "Garbage"
-                  - "Good Stuff"
-                  - "Gorillaz"
-                  - "Guns N' Roses"
-                  - "Guns N' Roses – Chinese Democracy"
-                  - "The Hair Mix"
-                  - "I Think I Love You"
-                  - "Ice Ice Baby"
-                  - "Infinite Mix (favorites)"
-                  - "Infinite Mix (library)"
-                  - "Iron Maiden – Somewhere Back In Time: The Best of 1980-1989"
-                  - "JACK WHITE- BLUNDERBUSS"
-                  - "John Williams – Star Wars"
-                  - "Johnny Cash – The Essential Johnny Cash (1955-1983)"
-                  - "Judas Priest - The Essential Judas Priest"
-                  - "Katzenjammer – Le Pop"
-                  - "Kelly Clarkson – Greatest Hits - Chapter One"
-                  - "Killer Be Killed – Killer Be Killed"
-                  - "The Killers"
-                  - "The Killers – Imploding The Mirage 2"
-                  - "The Killers – Live From The Royal Albert Hall"
-                  - "Kiss – Playlist Plus"
-                  - "Lady Gaga (113)"
-                  - "Lady Gaga (133)"
-                  - "Les Misérables Original London Cast – Les Misérables - Original London Cast Recording"
-                  - "Liked Songs mcwook"
-                  - "Linkin Park"
-                  - "The Lonely Island"
-                  - "The Lonely Island - Popstar: Never Stop Never Stopping"
-                  - "Lordi – Sexorcism"
-                  - "Megadeth"
-                  - "Megadeth – Cryptic Writings"
-                  - "Megadeth – Peace Sells...But Who's Buying?"
-                  - "Megadeth – Rust In Peace"
-                  - "Metal Essentials"
-                  - "Metallica"
-                  - "Metallica - S&M"
-                  - "Metallica – Death Magnetic"
-                  - "Metallica – Hardwired…To Self-Destruct"
-                  - "Metallica – S&M2"
-                  - "Midnight Oil – Blue Sky Mining"
-                  - "The Monkees – The Best Of The Monkees"
-                  - "Muse"
-                  - "Mötley Crüe"
-                  - "Mötley Crüe – The Greatest Hits"
-                  - "Neil Diamond"
-                  - "Nine Inch Nails – The Downward Spiral"
-                  - "Nirvana – Nevermind"
-                  - "No Doubt"
-                  - "No Doubt – 2"
-                  - "No Doubt – The Singles Collection"
-                  - "Not Another Teen Movie Soundtrack – Music From The Motion Picture Not Another Teen Movie"
-                  - "The Offspring – Greatest Hits"
-                  - "Ozzy Osbourne"
-                  - "P!nk - Greatest Hits...So Far!!!"
-                  - "P!nk – The Truth About Love"
-                  - "Pet Shop Boys - Discography - Complete Singles Collection"
-                  - "Pet Shop Boys – PopArt: The Hits"
-                  - "The Police – Every Breath You Take The Classics 2"
-                  - "Poppy Girl Songs"
-                  - "Pops Out Of This World"
-                  - "Queen – Live At Wembley Stadium"
-                  - "Queen – The Platinum Collection"
-                  - "Queensryche – Empire - 20th Anniversary Edition"
-                  - "Random Album (from library)"
-                  - "Random Artist (from library)"
-                  - "Recently added tracks"
-                  - "Recently played tracks"
-                  - "Red Hot Chili Peppers – Greatest Hits"
-                  - "Requiem for a Tower"
-                  - "Rush – Spirit Of Radio: Greatest Hits (1974-1987)"
-                  - "Sabaton"
-                  - "Sabaton – Heroes"
-                  - "Sabaton – The Great War"
-                  - "Sabaton – The Last Stand"
-                  - "Sleigh Bells"
-                  - "Songs that Build"
-                  - "Supernatural Seasons 1- 7 (feel free to send me a message on facebook and I'll be happy to send you the zip of the composed OST)"
-                  - "t.A.T.u."
-                  - "t.A.T.u. – t.A.T.u. - The Best"
-                  - "Take On Me"
-                  - "Tenacious D – Tenacious D"
-                  - "This Is Fontaines D.C."
-                  - "This Is KISS"
-                  - "This Is Muse"
-                  - "This Is Musicalbasics (14)"
-                  - "This Is Musicalbasics (15)"
-                  - "This Is The Warning"
-                  - "Thriller"
-                  - "TOOL"
-                  - "TOOL – Fear Inoculum"
-                  - "Van Halen - David Lee Roth"
-                  - "Van Halen - Sammy Hagar"
-                  - "Van Halen – A Different Kind Of Truth"
-                  - "Various Artists – Scott Pilgrim vs. the World (Original Motion Picture Soundtrack)"
-                  - "Velvet Revolver"
-                  - "Warrant – The Best Of Warrant"
-                  - "Wax – Rosana (Produced By Nobody Famous)"
-                  - "We Used To Be Friends"
-                  - "Weezer"
-                  - "Weezer – Weezer (Teal Album) 2"
-                  - "The White Stripes"
-                  - "Wonderboy"
-                  - "Wonderful Wonderful (Deluxe)"
-                  - "Your All-Time Top Songs"
-                  - "Your Top Songs 2023"
+              - button:
+                  styles: control
+                  height: 64
+                  width: 136
+                  pad_all: 6
+                  widgets:
+                    - label: {text: "Megadeth", width: 100%, long_mode: DOT, text_align: center}
+                  on_click:
+                    - homeassistant.action:
+                        action: media_player.play_media
+                        data_template:
+                          entity_id: "media_player.loud_esp32"
+                          media_content_type: "playlist"
+                          media_content_id: "library://playlist/11"
+              - button:
+                  styles: control
+                  height: 64
+                  width: 136
+                  pad_all: 6
+                  widgets:
+                    - label: {text: "Avenged Sevenfold", width: 100%, long_mode: DOT, text_align: center}
+                  on_click:
+                    - homeassistant.action:
+                        action: media_player.play_media
+                        data_template:
+                          entity_id: "media_player.loud_esp32"
+                          media_content_type: "playlist"
+                          media_content_id: "library://playlist/26"
+              - button:
+                  styles: control
+                  height: 64
+                  width: 136
+                  pad_all: 6
+                  widgets:
+                    - label: {text: "The Killers", width: 100%, long_mode: DOT, text_align: center}
+                  on_click:
+                    - homeassistant.action:
+                        action: media_player.play_media
+                        data_template:
+                          entity_id: "media_player.loud_esp32"
+                          media_content_type: "playlist"
+                          media_content_id: "library://playlist/28"
+              - button:
+                  styles: control
+                  height: 64
+                  width: 136
+                  pad_all: 6
+                  widgets:
+                    - label: {text: "Good Stuff", width: 100%, long_mode: DOT, text_align: center}
+                  on_click:
+                    - homeassistant.action:
+                        action: media_player.play_media
+                        data_template:
+                          entity_id: "media_player.loud_esp32"
+                          media_content_type: "playlist"
+                          media_content_id: "library://playlist/27"
+              - button:
+                  styles: control
+                  height: 64
+                  width: 136
+                  pad_all: 6
+                  widgets:
+                    - label: {text: "Metallica", width: 100%, long_mode: DOT, text_align: center}
+                  on_click:
+                    - homeassistant.action:
+                        action: media_player.play_media
+                        data_template:
+                          entity_id: "media_player.loud_esp32"
+                          media_content_type: "playlist"
+                          media_content_id: "library://playlist/23"
+              - button:
+                  styles: control
+                  height: 64
+                  width: 136
+                  pad_all: 6
+                  widgets:
+                    - label: {text: "Muse", width: 100%, long_mode: DOT, text_align: center}
+                  on_click:
+                    - homeassistant.action:
+                        action: media_player.play_media
+                        data_template:
+                          entity_id: "media_player.loud_esp32"
+                          media_content_type: "playlist"
+                          media_content_id: "library://playlist/135"
