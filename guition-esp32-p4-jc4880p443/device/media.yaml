@@ -35,7 +35,7 @@ image:
     url: "https://httpbin.org/image/jpeg"
     format: JPEG
     type: RGB565
-    resize: 96x96
+    resize: 144x144
     on_download_finished:
       - lvgl.image.update:
           id: cover_art_widget
@@ -113,7 +113,7 @@ lvgl:
       layout:
         type: flex
         flex_flow: column
-        pad_row: 28
+        pad_row: 12
       width: 100%
       scrollable: false
       bg_color: Black
@@ -128,7 +128,7 @@ lvgl:
         - obj:
             layout: {type: flex, flex_flow: row, flex_align_main: start, flex_align_cross: center, pad_column: 14}
             width: 100%
-            height: 100
+            height: 148
             pad_all: 0
             scrollable: false
             bg_opa: TRANSP
@@ -137,8 +137,8 @@ lvgl:
               - image:
                   id: cover_art_widget
                   src: cover_art
-                  width: 96
-                  height: 96
+                  width: 144
+                  height: 144
               - obj:
                   layout: {type: flex, flex_flow: column, flex_align_cross: start}
                   flex_grow: 1
@@ -322,3 +322,17 @@ lvgl:
                           entity_id: "media_player.loud_esp32"
                           media_content_type: "playlist"
                           media_content_id: "library://playlist/135"
+              - button:
+                  styles: control
+                  height: 64
+                  width: 136
+                  pad_all: 6
+                  widgets:
+                    - label: {text: "Linkin Park", width: 100%, long_mode: DOT, text_align: center}
+                  on_click:
+                    - homeassistant.action:
+                        action: media_player.play_media
+                        data_template:
+                          entity_id: "media_player.loud_esp32"
+                          media_content_type: "playlist"
+                          media_content_id: "library://playlist/106"
