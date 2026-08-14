@@ -62,27 +62,10 @@ binary_sensor:
             - logger.log: "[backlight] Not playing either - (re)starting 3min dim countdown"
             - script.execute: dim_after_delay
 
-# Wakes the display on any touch (merged into device/device.yaml's
-# touchscreen by matching `id:`). platform: is repeated here (same value
-# as device/device.yaml) so this entry validates standalone regardless of
-# package merge/validation order - omitting it worked in earlier builds
-# but started failing once other config grew around it.
-touchscreen:
-  - platform: gt911
-    id: my_touchscreen
-    display: my_display
-    on_touch:
-      - logger.log: "[backlight] Touch detected - turning backlight on"
-      - switch.turn_on: backlight
-      # Only restart the dim countdown if NEITHER playing nor present -
-      # if presence is accurate, touching implies presence is already on
-      # and this branch won't fire, but this covers presence-sensor gaps.
-      - if:
-          condition:
-            lambda: 'return id(speaker_state).state != "playing" && !id(office_presence).state;'
-          then:
-            - logger.log: "[backlight] Not playing and no presence - (re)starting 3min dim countdown after touch"
-            - script.execute: dim_after_delay
+# NOTE: touchscreen on_touch (wake-on-touch) now lives directly in
+# device/device.yaml, on the touchscreen's one true definition - see the
+# comment there for why the cross-file "supplement by id" approach that
+# used to be here was replaced.
 
 text_sensor:
   - platform: homeassistant

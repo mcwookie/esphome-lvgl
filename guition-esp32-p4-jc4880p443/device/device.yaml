@@ -73,10 +73,28 @@ i2c:
   frequency: 400kHz
 
 # Touchscreen
+# on_touch wakes the display - references id(speaker_state)/id(office_presence)/
+# dim_after_delay/backlight, all defined in device/media.yaml. That's fine:
+# referencing another file's id inside a lambda is a plain C++ symbol
+# reference at compile time, unrelated to (and much more reliable than) the
+# YAML-level "supplement this component from another package file by
+# matching id:" mechanism, which turned out to be fragile here.
 touchscreen:
   - platform: gt911
     id: my_touchscreen
     display: my_display
+    on_touch:
+      - logger.log: "[backlight] Touch detected - turning backlight on"
+      - switch.turn_on: backlight
+      # Only restart the dim countdown if NEITHER playing nor present -
+      # if presence is accurate, touching implies presence is already on
+      # and this branch won't fire, but this covers presence-sensor gaps.
+      - if:
+          condition:
+            lambda: 'return id(speaker_state).state != "playing" && !id(office_presence).state;'
+          then:
+            - logger.log: "[backlight] Not playing and no presence - (re)starting 3min dim countdown after touch"
+            - script.execute: dim_after_delay
 
 # Display
 display:
