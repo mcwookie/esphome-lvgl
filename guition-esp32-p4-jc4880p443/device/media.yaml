@@ -63,9 +63,14 @@ binary_sensor:
             - script.execute: dim_after_delay
 
 # Wakes the display on any touch (merged into device/device.yaml's
-# touchscreen by matching `id:`).
+# touchscreen by matching `id:`). platform: is repeated here (same value
+# as device/device.yaml) so this entry validates standalone regardless of
+# package merge/validation order - omitting it worked in earlier builds
+# but started failing once other config grew around it.
 touchscreen:
-  - id: my_touchscreen
+  - platform: gt911
+    id: my_touchscreen
+    display: my_display
     on_touch:
       - logger.log: "[backlight] Touch detected - turning backlight on"
       - switch.turn_on: backlight
