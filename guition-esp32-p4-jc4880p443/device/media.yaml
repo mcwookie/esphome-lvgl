@@ -41,12 +41,70 @@ image:
           id: cover_art_widget
           src: cover_art
 
+# Backlight stays on if EITHER someone is present OR music is playing;
+# dims (after a 3min debounce, see dim_after_delay below) only once BOTH
+# are false. Reuses the `backlight` switch already defined (and wired to
+# the physical LED) in addon/backlight.yaml.
+binary_sensor:
+  - platform: homeassistant
+    id: office_presence
+    entity_id: binary_sensor.akamatis_presence_sensor_3d07d8_presence
+    on_press:
+      - logger.log: "[backlight] Presence detected - cancelling any pending dim, turning backlight on"
+      - script.stop: dim_after_delay
+      - switch.turn_on: backlight
+    on_release:
+      - logger.log: "[backlight] Presence lost"
+      - if:
+          condition:
+            lambda: 'return id(speaker_state).state != "playing";'
+          then:
+            - logger.log: "[backlight] Not playing either - (re)starting 3min dim countdown"
+            - script.execute: dim_after_delay
+
+# Wakes the display on any touch (merged into device/device.yaml's
+# touchscreen by matching `id:`).
+touchscreen:
+  - id: my_touchscreen
+    on_touch:
+      - logger.log: "[backlight] Touch detected - turning backlight on"
+      - switch.turn_on: backlight
+      # Only restart the dim countdown if NEITHER playing nor present -
+      # if presence is accurate, touching implies presence is already on
+      # and this branch won't fire, but this covers presence-sensor gaps.
+      - if:
+          condition:
+            lambda: 'return id(speaker_state).state != "playing" && !id(office_presence).state;'
+          then:
+            - logger.log: "[backlight] Not playing and no presence - (re)starting 3min dim countdown after touch"
+            - script.execute: dim_after_delay
+
 text_sensor:
   - platform: homeassistant
     id: speaker_state
     entity_id: media_player.loud_esp32
     on_value:
       - script.execute: refresh_display
+      - logger.log:
+          format: "[backlight] speaker_state changed to '%s'"
+          args: ["x.c_str()"]
+      - if:
+          condition:
+            lambda: 'return x == "playing";'
+          then:
+            # Cancel any pending dim - playback resumed before it fired.
+            - logger.log: "[backlight] Playing - cancelling any pending dim, turning backlight on"
+            - script.stop: dim_after_delay
+            - switch.turn_on: backlight
+          else:
+            - if:
+                condition:
+                  lambda: 'return !id(office_presence).state;'
+                then:
+                  - logger.log: "[backlight] Not playing and no presence - (re)starting 3min dim countdown"
+                  - script.execute: dim_after_delay
+                else:
+                  - logger.log: "[backlight] Not playing but presence detected - staying lit"
   - platform: homeassistant
     id: speaker_media_title
     entity_id: media_player.loud_esp32
@@ -79,6 +137,16 @@ sensor:
 # entirely inside the device, no Home Assistant service call involved, so
 # inline !lambda is fine here.)
 script:
+  # mode: restart means repeated triggers (another non-"playing" state,
+  # or a touch while non-"playing") reset the 3-minute countdown instead
+  # of stacking multiple pending turn-offs.
+  - id: dim_after_delay
+    mode: restart
+    then:
+      - logger.log: "[backlight] dim_after_delay started - waiting 3 minutes"
+      - delay: 3min
+      - logger.log: "[backlight] 3 minutes elapsed - turning backlight off"
+      - switch.turn_off: backlight
   - id: refresh_display
     then:
       - lvgl.label.update:
