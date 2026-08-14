@@ -76,6 +76,10 @@ text_sensor:
       - logger.log:
           format: "[backlight] speaker_state changed to '%s'"
           args: ["x.c_str()"]
+      # Flat, non-nested conditions (each a single boolean lambda) rather
+      # than an if-inside-if - deep nesting is the leading suspect for a
+      # stack-corruption crash ("Instruction address misaligned") seen
+      # after this logic was previously nested.
       - if:
           condition:
             lambda: 'return x == "playing";'
@@ -84,15 +88,12 @@ text_sensor:
             - logger.log: "[backlight] Playing - cancelling any pending dim, turning backlight on"
             - script.stop: dim_after_delay
             - switch.turn_on: backlight
-          else:
-            - if:
-                condition:
-                  lambda: 'return !id(office_presence).state;'
-                then:
-                  - logger.log: "[backlight] Not playing and no presence - (re)starting 3min dim countdown"
-                  - script.execute: dim_after_delay
-                else:
-                  - logger.log: "[backlight] Not playing but presence detected - staying lit"
+      - if:
+          condition:
+            lambda: 'return x != "playing" && !id(office_presence).state;'
+          then:
+            - logger.log: "[backlight] Not playing and no presence - (re)starting 3min dim countdown"
+            - script.execute: dim_after_delay
   - platform: homeassistant
     id: speaker_media_title
     entity_id: media_player.loud_esp32
