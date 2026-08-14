@@ -7,7 +7,7 @@
 substitutions:
   ha_url: "http://192.168.1.10:8123"   # <-- CHANGE ME to your real Home Assistant LAN address
 
-# Single-player build: this panel now controls only media_player.loud_esp32
+# Single-player build: this panel now controls only media_player.office_desk_speakers_group
 # ("office-desk-speaker"). No player-select UI or per-player branching is
 # needed - if you add a second controllable player later, reintroduce the
 # current_player global + player-select row + per-player sensor sets.
@@ -70,7 +70,7 @@ binary_sensor:
 text_sensor:
   - platform: homeassistant
     id: speaker_state
-    entity_id: media_player.loud_esp32
+    entity_id: media_player.office_desk_speakers_group
     on_value:
       - script.execute: refresh_display
       - logger.log:
@@ -96,19 +96,19 @@ text_sensor:
             - script.execute: dim_after_delay
   - platform: homeassistant
     id: speaker_media_title
-    entity_id: media_player.loud_esp32
+    entity_id: media_player.office_desk_speakers_group
     attribute: media_title
     on_value:
       - script.execute: refresh_display
   - platform: homeassistant
     id: speaker_media_artist
-    entity_id: media_player.loud_esp32
+    entity_id: media_player.office_desk_speakers_group
     attribute: media_artist
     on_value:
       - script.execute: refresh_display
   - platform: homeassistant
     id: speaker_entity_picture
-    entity_id: media_player.loud_esp32
+    entity_id: media_player.office_desk_speakers_group
     attribute: entity_picture
     on_value:
       - script.execute: refresh_display
@@ -116,7 +116,7 @@ text_sensor:
 sensor:
   - platform: homeassistant
     id: speaker_volume
-    entity_id: media_player.loud_esp32
+    entity_id: media_player.office_desk_speakers_group
     attribute: volume_level
     on_value:
       - script.execute: refresh_display
@@ -240,7 +240,7 @@ lvgl:
                     - homeassistant.action:
                         action: media_player.media_previous_track
                         data_template:
-                          entity_id: "media_player.loud_esp32"
+                          entity_id: "media_player.office_desk_speakers_group"
               - button:
                   id: play_pause_button
                   styles: control
@@ -253,7 +253,7 @@ lvgl:
                     - homeassistant.action:
                         action: media_player.media_play_pause
                         data_template:
-                          entity_id: "media_player.loud_esp32"
+                          entity_id: "media_player.office_desk_speakers_group"
               - button:
                   styles: control
                   height: 90
@@ -265,7 +265,7 @@ lvgl:
                     - homeassistant.action:
                         action: media_player.media_next_track
                         data_template:
-                          entity_id: "media_player.loud_esp32"
+                          entity_id: "media_player.office_desk_speakers_group"
 
         # --- Volume --- (height 24)
         - slider:
@@ -282,7 +282,7 @@ lvgl:
                   variables:
                     vol_value: !lambda 'return x / 100.0f;'
                   data_template:
-                    entity_id: "media_player.loud_esp32"
+                    entity_id: "media_player.office_desk_speakers_group"
                     volume_level: "{{ vol_value }}"
 
         # --- Playlist shortcuts (Music Assistant library IDs) --- (64px rows)
@@ -306,7 +306,7 @@ lvgl:
                     - homeassistant.action:
                         action: media_player.play_media
                         data_template:
-                          entity_id: "media_player.loud_esp32"
+                          entity_id: "media_player.office_desk_speakers_group"
                           media_content_type: "playlist"
                           media_content_id: "library://playlist/11"
               - button:
@@ -320,7 +320,7 @@ lvgl:
                     - homeassistant.action:
                         action: media_player.play_media
                         data_template:
-                          entity_id: "media_player.loud_esp32"
+                          entity_id: "media_player.office_desk_speakers_group"
                           media_content_type: "playlist"
                           media_content_id: "library://playlist/26"
               - button:
@@ -334,7 +334,7 @@ lvgl:
                     - homeassistant.action:
                         action: media_player.play_media
                         data_template:
-                          entity_id: "media_player.loud_esp32"
+                          entity_id: "media_player.office_desk_speakers_group"
                           media_content_type: "playlist"
                           media_content_id: "library://playlist/28"
               - button:
@@ -348,7 +348,7 @@ lvgl:
                     - homeassistant.action:
                         action: media_player.play_media
                         data_template:
-                          entity_id: "media_player.loud_esp32"
+                          entity_id: "media_player.office_desk_speakers_group"
                           media_content_type: "playlist"
                           media_content_id: "library://playlist/27"
               - button:
@@ -362,7 +362,7 @@ lvgl:
                     - homeassistant.action:
                         action: media_player.play_media
                         data_template:
-                          entity_id: "media_player.loud_esp32"
+                          entity_id: "media_player.office_desk_speakers_group"
                           media_content_type: "playlist"
                           media_content_id: "library://playlist/23"
               - button:
@@ -376,7 +376,7 @@ lvgl:
                     - homeassistant.action:
                         action: media_player.play_media
                         data_template:
-                          entity_id: "media_player.loud_esp32"
+                          entity_id: "media_player.office_desk_speakers_group"
                           media_content_type: "playlist"
                           media_content_id: "library://playlist/135"
               - button:
@@ -390,6 +390,6 @@ lvgl:
                     - homeassistant.action:
                         action: media_player.play_media
                         data_template:
-                          entity_id: "media_player.loud_esp32"
+                          entity_id: "media_player.office_desk_speakers_group"
                           media_content_type: "playlist"
                           media_content_id: "library://playlist/106"
