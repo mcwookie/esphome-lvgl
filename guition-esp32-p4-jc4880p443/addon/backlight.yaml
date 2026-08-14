@@ -1,4 +1,7 @@
 # Backlight
+# Driven by device/media.yaml's speaker_state / office_presence logic
+# (the original template's own presence-based screensaver binary_sensor,
+# pointed at a nonexistent entity, was removed from here as dead weight).
 switch:
   - platform: template
     id: backlight
@@ -8,20 +11,3 @@ switch:
       - light.turn_on: display_backlight
     turn_off_action:
       - light.turn_off: display_backlight
-
-# Screensaver Presence Trigger
-binary_sensor:
-  - platform: homeassistant
-    id: presence
-    entity_id: binary_sensor.office_presence_group
-    on_press:
-      - lvgl.resume:
-      - delay: 10ms
-      - switch.turn_on: backlight
-      - logger.log: "Screensaver is turned off"
-
-    on_release:
-      - switch.turn_off: backlight
-      - lvgl.pause:
-          show_snow: true
-      - logger.log: "Screensaver is turned on"
